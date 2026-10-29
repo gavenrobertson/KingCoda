@@ -38,7 +38,7 @@ RUN --mount=type=secret,id=ca,required=false,mode=0444 kc-apt g++ && rm /usr/loc
 
 # The sandbox user owns nothing in the image. /work is traversable but not listable by it.
 RUN groupadd -g 2000 sandbox && useradd -u 2000 -g 2000 -M -d /nonexistent -s /usr/sbin/nologin sandbox \
- && mkdir -p /opt/kc /work && chmod 0711 /work \
+ && mkdir -p /opt/kc/jail /work && chmod 0711 /work \
  && precompile_check=$(python3 -c 'print(1)') && test "$precompile_check" = 1
 
 COPY --from=build /out-kc-exec /opt/kc/kc-exec

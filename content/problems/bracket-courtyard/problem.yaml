@@ -1,0 +1,31 @@
+number: 2
+slug: bracket-courtyard
+title: Bracket Courtyard
+difficulty: Easy
+tags: [Stack, Strings]
+signature:
+  function: firstBadGate
+  params:
+    - { name: plan, type: string }
+  returns: int
+limits: { timeMs: 1000, memoryMb: 256 }
+constraints:
+  - '0 ≤ plan.length ≤ 10⁵'
+  - 'plan contains only the characters ( ) [ ] { }'
+examples:
+  - args: { plan: '([]{})' }
+    output: -1
+    explanation: Every gate closes the most recent open gate of its own kind.
+  - args: { plan: '([)]' }
+    output: 2
+    explanation: The ) at index 2 tries to close the [ opened at index 1.
+  - args: { plan: '(()' }
+    output: 3
+    explanation: Nothing breaks, but one gate is still open at the end, so the answer is the length, 3.
+hints:
+  - text: The gate a closing bracket must match is always the most recently opened one that's still open.
+    unlockAfterWrong: 2
+  - text: Push opening brackets on a stack. A closing bracket must match the top; an empty stack or a mismatch is the first bad gate.
+    unlockAfterWrong: 4
+license: CC-BY-SA-4.0
+source: Original KingCoda problem

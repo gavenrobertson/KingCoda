@@ -1,0 +1,30 @@
+number: 13
+slug: heralds-echo
+title: Herald's Echo
+difficulty: Easy
+tags: [Two Pointers, Strings]
+signature:
+  function: isEcho
+  params:
+    - { name: decree, type: string }
+  returns: bool
+limits: { timeMs: 1000, memoryMb: 256 }
+constraints:
+  - '0 ≤ decree.length ≤ 2·10⁵'
+  - 'decree contains printable ASCII characters.'
+examples:
+  - args: { decree: 'Long live the king!' }
+    output: false
+  - args: { decree: 'No lemon, no melon.' }
+    output: true
+    explanation: Keeping only letters and digits and ignoring case gives "nolemonnomelon", which reads the same both ways.
+  - args: { decree: '...' }
+    output: true
+    explanation: With nothing left to read, the echo is trivially perfect.
+hints:
+  - text: You don't need to build a cleaned copy of the string. Two indices can skip the characters that don't count.
+    unlockAfterWrong: 2
+  - text: Move i from the left and j from the right, skipping anything that isn't a letter or digit, and compare lowercase characters until they meet.
+    unlockAfterWrong: 4
+license: CC-BY-SA-4.0
+source: Original KingCoda problem

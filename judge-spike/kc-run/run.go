@@ -128,9 +128,19 @@ func (c *cappedBuffer) String() string {
 }
 
 func (r *runner) step(dir string, argv []string, stdin string, lim limits) (*StepResult, error) {
+	cgPath := "-"
+	var cg *stepCgroup
+	if r.cg != nil {
+		var err error
+		if cg, err = r.cg.newStep(lim.memoryMb, lim.nproc); err != nil {
+			return nil, fmt.Errorf("cgroup: %w", err)
+		}
+		defer cg.remove()
+		cgPath = cg.path
+	}
 	args := []string{
 		itoa(lim.cpuMs), itoa(stackMb), itoa(fsizeMb), itoa(lim.nproc),
-		itoa(r.cfg.UID), itoa(r.cfg.GID), dir, "--",
+		itoa(r.cfg.UID), itoa(r.cfg.GID), dir, cgPath, "--",
 	}
 	cmd := exec.Command(r.cfg.KcExec, append(args, argv...)...)
 	cmd.Env = []string{}
@@ -155,9 +165,12 @@ func (r *runner) step(dir string, argv []string, stdin string, lim limits) (*Ste
 		killWg.Add(1)
 		killMu.Unlock()
 		defer killWg.Done()
+		if cg != nil {
+			cg.kill()
+		}
 		if cmd.Process != nil {
-			// kc-exec calls setsid(), so the child's pid is its process group: stop it first,
-			// then sweep anything that escaped the group.
+			// kc-exec calls setsid(), so its pid is the process group, which includes the sandbox's
+			// PID-namespace init; when that dies the kernel kills everything left in the namespace.
 			_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
 		}
 		r.sweepOnce()
@@ -239,6 +252,9 @@ func (r *runner) step(dir string, argv []string, stdin string, lim limits) (*Ste
 	killMu.Lock()
 	killedFor := reason
 	killMu.Unlock()
+	if killedFor == "" && cg != nil && cg.oomKilled() {
+		killedFor = StatusMLE
+	}
 
 	switch {
 	case killedFor != "":

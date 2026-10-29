@@ -1,0 +1,29 @@
+number: 11
+slug: reverse-the-procession
+title: Reverse the Procession
+difficulty: Easy
+tags: [Linked List]
+signature:
+  function: reverseProcession
+  params:
+    - { name: head, type: ListNode }
+  returns: ListNode
+limits: { timeMs: 1000, memoryMb: 256 }
+constraints:
+  - 'The procession has between 0 and 10⁵ marchers.'
+  - '-10⁹ ≤ marcher banner number ≤ 10⁹'
+examples:
+  - args: { head: [1, 2, 3, 4] }
+    output: [4, 3, 2, 1]
+  - args: { head: [7] }
+    output: [7]
+  - args: { head: [] }
+    output: []
+    explanation: An empty procession stays empty.
+hints:
+  - text: Walk the list once. At each marcher, you only need to know who was in front of them.
+    unlockAfterWrong: 2
+  - text: Keep prev = null. For each node, save next, point node.next at prev, then step prev and node forward. prev is the new head.
+    unlockAfterWrong: 4
+license: CC-BY-SA-4.0
+source: Original KingCoda problem

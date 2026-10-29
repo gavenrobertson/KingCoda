@@ -9,7 +9,7 @@ import (
 
 // introspect reports facts the spike needs to settle D3: what the box's root actually holds,
 // and what a sandboxed process ends up with.
-func introspect(cfg config) map[string]any {
+func introspect(cfg config, cgroupsOn bool) map[string]any {
 	read := func(p string) string {
 		b, err := os.ReadFile(p)
 		if err != nil {
@@ -26,8 +26,10 @@ func introspect(cfg config) map[string]any {
 		return ""
 	}
 	sandboxed := ""
-	out, err := exec.Command(cfg.KcExec, "1000", "64", "1", "8", itoa(cfg.UID), itoa(cfg.GID), "/", "--",
-		"/bin/sh", "-c", "id; grep -E '^(Cap|NoNewPrivs|Seccomp)' /proc/self/status").CombinedOutput()
+	_ = os.MkdirAll("/work/introspect", 0o700)
+	defer os.RemoveAll("/work/introspect")
+	out, err := exec.Command(cfg.KcExec, "1000", "64", "1", "8", itoa(cfg.UID), itoa(cfg.GID), "/work/introspect", "-", "--",
+		"/bin/sh", "-c", "id; grep -E '^(Cap|NoNewPrivs|Seccomp)' /proc/self/status; echo pids: $(ls /proc | grep -c '^[0-9]'); echo root: $(ls /)").CombinedOutput()
 	sandboxed = string(out)
 	if err != nil {
 		sandboxed += "\nerror: " + err.Error()
@@ -44,5 +46,6 @@ func introspect(cfg config) map[string]any {
 		"unprivUserNsClone": read("/proc/sys/kernel/unprivileged_userns_clone"),
 		"cgroupControllers": read("/sys/fs/cgroup/cgroup.controllers"),
 		"sandboxedProcess":  sandboxed,
+		"cgroupsEnabled":    cgroupsOn,
 	}
 }

@@ -1,0 +1,29 @@
+number: 3
+slug: longest-calm-stretch
+title: Longest Calm Stretch
+difficulty: Medium
+tags: [Sliding Window, Deque]
+signature:
+  function: longestCalm
+  params:
+    - { name: speeds, type: 'int[]' }
+    - { name: k, type: int }
+  returns: int
+limits: { timeMs: 1000, memoryMb: 256 }
+constraints:
+  - '1 ≤ speeds.length ≤ 10⁵'
+  - '0 ≤ speeds[i] ≤ 10⁹'
+  - '0 ≤ k ≤ 10⁹'
+examples:
+  - args: { speeds: [3, 6, 5, 7, 12, 11], k: 4 }
+    output: 4
+    explanation: The run [3,6,5,7] has a fastest reading of 7 and a slowest of 3 — a gap of exactly 4.
+  - args: { speeds: [9, 9, 9], k: 0 }
+    output: 3
+hints:
+  - text: You only need the current window's max and min. Two deques can hand you both in O(1) as the window slides.
+    unlockAfterWrong: 2
+  - text: Keep one deque of indices with decreasing speeds (for the max) and one with increasing speeds (for the min). Advance the left edge while max − min > k.
+    unlockAfterWrong: 4
+license: CC-BY-SA-4.0
+source: Original KingCoda problem

@@ -12,12 +12,14 @@ A go/no-go prototype for the judge design in [ARCHITECTURE §5](../docs/ARCHITEC
 
 ## Run locally (Docker)
 
+kc-exec builds a namespace jail, which needs root with `CAP_SYS_ADMIN` (as on Cloudflare), so run the box `--privileged`. Without it, every job fails closed with `clone namespaces: Operation not permitted`.
+
 ```bash
 docker build -t kingcoda-judge-spike judge-spike
 ```
 
 ```bash
-docker run -d --name kcjudge -p 18080:8080 --memory 3g --cpus 1 kingcoda-judge-spike
+docker run -d --name kcjudge --privileged -p 18080:8080 --memory 3g --cpus 1 kingcoda-judge-spike
 ```
 
 ```bash

@@ -32,7 +32,7 @@ func main() {
 		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "busy": r.busy()})
 	})
 	mux.HandleFunc("GET /introspect", func(w http.ResponseWriter, _ *http.Request) {
-		writeJSON(w, http.StatusOK, introspect(cfg))
+		writeJSON(w, http.StatusOK, introspect(cfg, r.cg != nil))
 	})
 	mux.HandleFunc("POST /run", func(w http.ResponseWriter, req *http.Request) {
 		var job Job
@@ -89,6 +89,7 @@ func loadConfig() config {
 
 type runner struct {
 	cfg config
+	cg  *cgroups // nil without cgroup v2
 	mu  sync.Mutex
 	on  bool
 }
@@ -121,5 +122,6 @@ func (r *runner) prepare() error {
 	if err := os.MkdirAll(r.cfg.WorkRoot, 0o711); err != nil {
 		return err
 	}
+	r.cg = setupCgroups()
 	return os.Chmod(r.cfg.WorkRoot, 0o711)
 }

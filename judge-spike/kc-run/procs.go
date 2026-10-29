@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -81,9 +80,13 @@ func (r *runner) killSandboxProcs() int {
 	return found
 }
 
-// sweepOnce SIGKILLs every sandbox-uid process in one atomic pass (see kc-exec --kill-uid).
+// sweepOnce SIGKILLs every sandbox-uid process. Fork bombs can't outrun it: each sandbox lives in
+// its own PID namespace, which the kernel tears down when its init (the user's program) dies.
+// (A kill(-1) from a helper isn't safe here: on Cloudflare every process holds CAP_KILL.)
 func (r *runner) sweepOnce() {
-	_ = exec.Command(r.cfg.KcExec, "--kill-uid", itoa(r.cfg.UID), itoa(r.cfg.GID)).Run()
+	for _, pid := range sandboxPIDs(r.cfg.UID) {
+		_ = syscall.Kill(pid, syscall.SIGKILL)
+	}
 }
 
 // livePIDs is sandboxPIDs minus zombies, which are already dead and only wait to be reaped.

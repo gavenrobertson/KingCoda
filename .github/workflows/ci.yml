@@ -84,13 +84,15 @@ jobs:
         run: docker build -t kingcoda-judge-spike judge-spike
       - name: Start judge box
         run: |
-          docker run -d --name kcjudge -p 18080:8080 --memory 3g --cpus 1 kingcoda-judge-spike
+          docker run -d --name kcjudge --privileged --cgroupns private -p 18080:8080 --memory 3g --cpus 1 kingcoda-judge-spike
           for i in $(seq 1 30); do curl -fs localhost:18080/healthz && break; sleep 1; done
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
       - name: Hostile-code probe suite
-        run: node judge-spike/probes/run.ts http://localhost:18080
+        run: |
+          curl -fsS localhost:18080/introspect | jq '{cgroupsEnabled, sandboxedProcess}'
+          node judge-spike/probes/run.ts http://localhost:18080
       - name: Box logs
         if: failure()
         run: docker logs kcjudge

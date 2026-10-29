@@ -1,0 +1,29 @@
+number: 15
+slug: guard-rotation
+title: Guard Rotation
+difficulty: Easy
+tags: [Arrays, Math]
+signature:
+  function: rotateGuards
+  params:
+    - { name: posts, type: 'int[]' }
+    - { name: shifts, type: int }
+  returns: 'int[]'
+limits: { timeMs: 1000, memoryMb: 256 }
+constraints:
+  - '1 ≤ posts.length ≤ 10⁵'
+  - '-10⁹ ≤ posts[i] ≤ 10⁹'
+  - '0 ≤ shifts ≤ 10⁹'
+examples:
+  - args: { posts: [1, 2, 3, 4, 5], shifts: 2 }
+    output: [4, 5, 1, 2, 3]
+    explanation: After one shift the order is [5,1,2,3,4]; after two it is [4,5,1,2,3].
+  - args: { posts: [8, 9], shifts: 1000000001 }
+    output: [9, 8]
+hints:
+  - text: Shifting n times brings everyone back where they started.
+    unlockAfterWrong: 2
+  - text: Use s = shifts mod n. The guard at index i ends up at (i + s) mod n.
+    unlockAfterWrong: 4
+license: CC-BY-SA-4.0
+source: Original KingCoda problem

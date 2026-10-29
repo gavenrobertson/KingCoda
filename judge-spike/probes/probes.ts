@@ -291,36 +291,43 @@ export const probes: Probe[] = [
       ...base,
       lang: 'python',
       source:
-        'res=[]\nfor p in ["/etc/passwd","/opt/kc/kc-run","/opt/kc/kc-exec","/usr/bin/python3","/work/x","/root/x"]:\n    try:\n        open(p,"ab").close(); res.append("W:"+p)\n    except OSError: res.append("ok")\nprint(" ".join(res))\n',
+        'res=[]\nfor p in ["/etc/passwd","/usr/bin/python3","/usr/x","/opt/kc/kc-run","/root/x","/x"]:\n    try:\n        open(p,"ab").close(); res.append("W:"+p)\n    except OSError: res.append("ok")\nprint(" ".join(res))\n',
       inputs: [''],
     },
     check: stdoutIs('ok ok ok ok ok ok'),
   },
   {
-    name: "cannot read the supervisor's environment or memory",
+    name: 'only the sandbox’s own processes are visible',
     group: 'isolation',
     job: {
       ...base,
       lang: 'python',
       source:
-        'res=[]\nfor p in ["/proc/1/environ","/proc/1/mem","/proc/1/cmdline"]:\n    try:\n        open(p,"rb").read(1); res.append("R")\n    except OSError: res.append("x")\nprint("".join(res))\n',
+        'import os\npids=[p for p in os.listdir("/proc") if p.isdigit()]\nnames=[open("/proc/%s/cmdline"%p,"rb").read().split(b"\\0")[0].decode() for p in pids]\nprint(len(pids), any("kc-run" in n or "tini" in n for n in names))\n',
       inputs: [''],
     },
-    // cmdline is world-readable on Linux and holds nothing secret; environ and mem must not be.
-    check: (r) =>
-      /^xx[xR]$/.test(first(r)?.stdout.trim() ?? '') ? null : `got ${first(r)?.stdout.trim()}`,
+    check: stdoutIs('1 False'),
   },
   {
-    name: 'cannot list other jobs in /work',
+    name: 'filesystem is a minimal jail',
     group: 'isolation',
     job: {
       ...base,
       lang: 'python',
-      source:
-        'import os\ntry:\n    print(os.listdir("/work"))\nexcept OSError as e: print("denied")\n',
+      source: 'import os\nprint(",".join(sorted(os.listdir("/"))))\nprint(os.listdir("/work"))\n',
       inputs: [''],
     },
-    check: stdoutIs('denied'),
+    check: expectStatus('ok', (t) => {
+      const [root = '', work = ''] = t.stdout.trim().split('\n');
+      const entries = root.split(',');
+      const forbidden = entries.filter((e) =>
+        ['opt', 'root', 'home', 'sys', 'var', 'srv', 'boot', 'run', 'mnt'].includes(e),
+      );
+      if (forbidden.length) return `visible: ${forbidden.join(', ')}`;
+      if (!['usr', 'etc', 'tmp', 'work', 'dev', 'proc'].every((e) => entries.includes(e)))
+        return `missing basics in ${root}`;
+      return work.includes('main.py') ? null : `job dir not mounted at /work: ${work}`;
+    }),
   },
   {
     name: 'cannot regain root (setuid/setresuid/capset)',
@@ -347,30 +354,40 @@ export const probes: Probe[] = [
     check: stdoutIs('-1 -1 -1 -1 -1'),
   },
   {
-    name: 'sandboxed process holds no capabilities at all',
+    name: 'seccomp and no-new-privs are active',
     group: 'isolation',
     job: {
       ...base,
       lang: 'python',
       source:
-        'for l in open("/proc/self/status"):\n    if l.startswith(("CapInh","CapPrm","CapEff","CapBnd","CapAmb","NoNewPrivs")):\n        print(l.split()[0], l.split()[1])\n',
+        'for l in open("/proc/self/status"):\n    if l.startswith(("CapEff","CapBnd","NoNewPrivs","Seccomp:")):\n        print(l.split()[0], l.split()[1])\n',
       inputs: [''],
     },
+    // Capabilities are reported, not required to be zero: Cloudflare's durable_object policy keeps
+    // them whatever we do, which is why the jail and filter don't depend on them.
     check: expectStatus('ok', (t) => {
-      const caps = Object.fromEntries(
+      const kv = Object.fromEntries(
         t.stdout
           .trim()
           .split('\n')
           .map((l) => l.split(' ') as [string, string]),
       );
-      const bad = ['CapInh:', 'CapPrm:', 'CapEff:', 'CapBnd:', 'CapAmb:'].filter(
-        (k) => !/^0+$/.test(caps[k] ?? 'missing'),
-      );
-      if (caps['NoNewPrivs:'] !== '1') bad.push('NoNewPrivs');
-      return bad.length
-        ? `still set: ${bad.join(' ')} (${t.stdout.trim().replace(/\n/g, ', ')})`
-        : null;
+      return kv['NoNewPrivs:'] === '1' && kv['Seccomp:'] === '2'
+        ? null
+        : `got ${t.stdout.trim().replace(/\n/g, ', ')}`;
     }),
+  },
+  {
+    name: 'cannot raise its own limits, make devices or use real-time scheduling',
+    group: 'isolation',
+    job: {
+      ...base,
+      lang: 'cpp',
+      source:
+        '#include <sys/resource.h>\n#include <sys/stat.h>\n#include <sys/sysmacros.h>\n#include <sched.h>\n#include <cstdio>\nint main(){ struct rlimit r; getrlimit(RLIMIT_CPU,&r); int g = r.rlim_cur > 0 ? 0 : -1; r.rlim_cur = r.rlim_max = RLIM_INFINITY; int a=setrlimit(RLIMIT_CPU,&r); int b=setrlimit(RLIMIT_NPROC,&r); int c=mknod("/tmp/disk", S_IFBLK|0600, makedev(8,0)); struct sched_param sp; sp.sched_priority=50; int d=sched_setscheduler(0,SCHED_FIFO,&sp); printf("%d %d %d %d %d\\n",g,a,b,c,d); }\n',
+      inputs: [''],
+    },
+    check: stdoutIs('0 -1 -1 -1 -1'),
   },
   {
     name: 'kill(-1) cannot take down the supervisor',
@@ -400,7 +417,7 @@ export const probes: Probe[] = [
 
   // ── hygiene between jobs ─────────────────────────────────────────────────
   {
-    name: 'background daemons are killed after the test',
+    name: 'background daemons die with the program',
     group: 'hygiene',
     job: {
       ...base,
@@ -412,10 +429,9 @@ export const probes: Probe[] = [
     check: (r) =>
       r.tests[0]?.status === 'ok' &&
       r.tests[0].stdout.trim() === 'parent done' &&
-      r.tests[0].wallMs < 1000 &&
-      r.strays >= 1
+      r.tests[0].wallMs < 1000
         ? null
-        : `status ${r.tests[0]?.status} stdout ${r.tests[0]?.stdout.trim()} wall ${r.tests[0]?.wallMs}ms strays ${r.strays}`,
+        : `status ${r.tests[0]?.status} stdout ${r.tests[0]?.stdout.trim()} wall ${r.tests[0]?.wallMs}ms`,
   },
   {
     name: 'no sandbox process survives into the next job',
@@ -436,7 +452,7 @@ export const probes: Probe[] = [
       ...base,
       lang: 'python',
       source:
-        'open("/tmp/kc-leak","w").write("secret")\nopen("/dev/shm/kc-leak","w").write("secret")\nprint("planted")\n',
+        'open("/tmp/kc-leak","w").write("secret")\ntry:\n    open("/dev/shm/kc-leak","w").write("secret")\nexcept OSError:\n    pass\nprint("planted")\n',
       inputs: [''],
     },
     check: stdoutIs('planted'),

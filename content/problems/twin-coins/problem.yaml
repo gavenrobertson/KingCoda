@@ -1,0 +1,32 @@
+number: 1
+slug: twin-coins
+title: Twin Coins
+difficulty: Easy
+tags: [Hashing, Arrays]
+signature:
+  function: twinCoins
+  params:
+    - { name: weights, type: 'int[]' }
+    - { name: target, type: int }
+  returns: 'int[]'
+limits: { timeMs: 1000, memoryMb: 256 }
+constraints:
+  - '2 ≤ weights.length ≤ 10⁵'
+  - '-10⁹ ≤ weights[i] ≤ 10⁹'
+  - '-2·10⁹ ≤ target ≤ 2·10⁹'
+examples:
+  - args: { weights: [4, 9, 1, 6], target: 7 }
+    output: [2, 3]
+    explanation: The coins at positions 2 and 3 weigh 1 + 6 = 7.
+  - args: { weights: [5, 5, 3], target: 10 }
+    output: [0, 1]
+    explanation: Two different coins can share a weight.
+  - args: { weights: [1, 2], target: 10 }
+    output: [-1, -1]
+hints:
+  - text: For each coin, the coin it needs is target minus its weight. Can you remember the coins you've already passed?
+    unlockAfterWrong: 2
+  - text: Walk left to right and keep a map from weight to the first position you saw it. The first time the needed weight is already in the map, you've found the pair that finishes earliest.
+    unlockAfterWrong: 4
+license: CC-BY-SA-4.0
+source: Original KingCoda problem
