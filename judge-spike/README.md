@@ -26,6 +26,10 @@ node judge-spike/probes/run.ts http://localhost:18080
 
 ## Run on Cloudflare (the deciding test)
 
+Easiest: run the **Judge spike on Cloudflare** workflow from the repo's Actions tab. It needs repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. It deploys, probes a cold box, writes the report to the run summary and deletes everything it deployed.
+
+By hand from your own machine:
+
 Needs the Workers Paid plan (Containers) and Docker running locally, because `wrangler deploy` builds and pushes the image.
 
 ```bash

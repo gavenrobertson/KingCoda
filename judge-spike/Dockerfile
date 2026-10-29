@@ -16,7 +16,9 @@ RUN cd kc-run && CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /out-kc-ru
 
 FROM ${DEBIAN}
 ARG HTTPS_PROXY
-RUN --mount=type=secret,id=ca,required=false,mode=0444 <<'SH'
+# apt helper: uses the optional CA secret and proxy when present (see header), plain HTTP otherwise.
+RUN cat > /usr/local/sbin/kc-apt <<'SH' && chmod 0755 /usr/local/sbin/kc-apt
+#!/bin/sh
 set -eu
 opts=""
 if [ -f /run/secrets/ca ]; then
@@ -25,9 +27,14 @@ if [ -f /run/secrets/ca ]; then
   [ -n "${HTTPS_PROXY:-}" ] && opts="$opts -o Acquire::https::Proxy=$HTTPS_PROXY"
 fi
 apt-get $opts update
-apt-get $opts install -y --no-install-recommends python3 nodejs g++ libc6-dev tini
+apt-get $opts install -y --no-install-recommends "$@"
 rm -rf /var/lib/apt/lists/*
 SH
+# One toolchain per layer keeps each layer small for registry uploads and lets languages change independently.
+RUN --mount=type=secret,id=ca,required=false,mode=0444 kc-apt tini python3
+RUN --mount=type=secret,id=ca,required=false,mode=0444 kc-apt nodejs
+RUN --mount=type=secret,id=ca,required=false,mode=0444 kc-apt libc6-dev
+RUN --mount=type=secret,id=ca,required=false,mode=0444 kc-apt g++ && rm /usr/local/sbin/kc-apt
 
 # The sandbox user owns nothing in the image. /work is traversable but not listable by it.
 RUN groupadd -g 2000 sandbox && useradd -u 2000 -g 2000 -M -d /nonexistent -s /usr/sbin/nologin sandbox \

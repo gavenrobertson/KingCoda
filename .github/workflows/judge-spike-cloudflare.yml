@@ -1,0 +1,102 @@
+name: Judge spike on Cloudflare
+
+# Manual run: deploys the spike Worker + JudgeBox container, runs the hostile-code probe suite on
+# real Cloudflare hardware, prints the report, then deletes everything it deployed.
+# Needs repo secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: judge-spike-cloudflare
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CI: '1'
+    defaults:
+      run:
+        working-directory: judge-spike/worker
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        working-directory: .
+
+      - name: Generate a one-off access token
+        run: |
+          token=$(openssl rand -hex 24)
+          echo "::add-mask::$token"
+          echo "SPIKE_TOKEN=$token" >> "$GITHUB_ENV"
+
+      - name: Deploy spike Worker and container
+        run: pnpm exec wrangler deploy
+
+      - name: Set access token
+        run: printf '%s' "$SPIKE_TOKEN" | pnpm exec wrangler secret put SPIKE_TOKEN
+
+      - name: Find the Worker URL
+        run: |
+          sub=$(curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" | jq -r .result.subdomain)
+          echo "SPIKE_URL=https://kingcoda-judge-spike.$sub.workers.dev" >> "$GITHUB_ENV"
+
+      - name: Introspect a fresh box (waits for provisioning)
+        run: |
+          for i in $(seq 1 40); do
+            code=$(curl -s -o introspect.json -w '%{http_code}' -m 120 \
+              -H "authorization: Bearer $SPIKE_TOKEN" "$SPIKE_URL/introspect?box=intro-$GITHUB_RUN_ID-$i")
+            if [ "$code" = 200 ] && jq -e .report.kernel introspect.json >/dev/null 2>&1; then break; fi
+            echo "attempt $i: HTTP $code, container still provisioning"; sleep 15
+          done
+          jq . introspect.json
+
+      - name: Run probe suite on a cold box
+        run: |
+          curl -fsS -m 600 -H "authorization: Bearer $SPIKE_TOKEN" \
+            "$SPIKE_URL/probe?box=probe-$GITHUB_RUN_ID" -o probe.json
+          jq '{coldStartMs, warmJobMs, passed, total, timing, failed}' probe.json
+          {
+            echo "## Judge spike on Cloudflare"
+            echo
+            echo "| Metric | Value |"
+            echo "| --- | --- |"
+            jq -r '"| Probes passed | \(.passed)/\(.total) |", "| Cold start | \(.coldStartMs) ms |", "| Warm job | \(.warmJobMs) ms |", "| CPU timing | mean \(.timing.meanMs) ms, CV \(.timing.cv) |"' probe.json
+            echo
+            echo '```'
+            jq -r .report.sandboxedProcess introspect.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          test "$(jq .passed probe.json)" = "$(jq .total probe.json)"
+
+      - name: Warm-box timing
+        run: |
+          curl -fsS -m 600 -H "authorization: Bearer $SPIKE_TOKEN" \
+            "$SPIKE_URL/probe?box=probe-$GITHUB_RUN_ID" | jq '{coldStartMs, warmJobMs, passed, total, timing}'
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: judge-spike-report
+          path: |
+            judge-spike/worker/introspect.json
+            judge-spike/worker/probe.json
+
+      - name: Delete everything this run deployed
+        if: always()
+        run: |
+          pnpm exec wrangler delete || true
+          for id in $(pnpm exec wrangler containers list --json 2>/dev/null | jq -r '.[] | select(.name | startswith("kingcoda-judge-spike")) | .id'); do
+            pnpm exec wrangler containers delete "$id" || true
+          done
+          for img in $(pnpm exec wrangler containers images list --json 2>/dev/null | jq -r '.[] | select(.name | contains("kingcoda-judge-spike")) | "\(.name):\(.tag)"'); do
+            pnpm exec wrangler containers images delete "$img" || true
+          done

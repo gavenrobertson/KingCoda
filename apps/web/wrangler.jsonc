@@ -57,7 +57,10 @@
     },
     "production": {
       "name": "kingcoda-web",
-      "vars": { "APP_ENV": "production", "BETTER_AUTH_URL": "https://kingcoda-web.gaven-robertson.workers.dev" },
+      "vars": {
+        "APP_ENV": "production",
+        "BETTER_AUTH_URL": "https://kingcoda-web.gaven-robertson.workers.dev",
+      },
       "d1_databases": [
         {
           "binding": "DB",
