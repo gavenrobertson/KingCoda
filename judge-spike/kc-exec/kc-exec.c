@@ -6,7 +6,10 @@
  * Runs as root (forked by kc-run), then in order:
  *   1. new session + process group (so the supervisor can kill the whole tree),
  *   2. resource limits (CPU, stack, file size, processes, open files, no core dumps),
- *   3. clears supplementary groups and drops to <uid>:<gid> (no capabilities remain),
+ *   3. strips every capability for good (empty bounding set, no ambient caps, locked securebits),
+ *      clears supplementary groups, drops to <uid>:<gid>, then verifies no capability survived.
+ *      Cloudflare's durable_object scheduling policy gives every process root's capabilities
+ *      regardless of uid, so the uid change alone is not enough there,
  *   4. PR_SET_NO_NEW_PRIVS, then a seccomp filter that denies network sockets,
  *      privilege changes, namespaces, mounts, tracing and kernel-facing syscalls,
  *   5. execve with an empty, fixed environment.
@@ -23,6 +26,8 @@
 #include <fcntl.h>
 #include <grp.h>
 #include <linux/audit.h>
+#include <linux/capability.h>
+#include <linux/securebits.h>
 #include <linux/filter.h>
 #include <linux/seccomp.h>
 #include <stddef.h>
@@ -111,6 +116,43 @@ static void install_seccomp(void) {
   if (syscall(SYS_seccomp, SECCOMP_SET_MODE_FILTER, 0, &prog) != 0) die(125, "seccomp");
 }
 
+/* Removes every capability from the bounding set and ambient set, and locks securebits so neither
+ * exec-as-root nor setuid can bring them back. Requires CAP_SETPCAP (kc-run runs as root). */
+static void strip_capabilities(void) {
+  for (int cap = 0; cap <= 63; cap++) {
+    if (prctl(PR_CAPBSET_DROP, cap, 0, 0, 0) != 0) {
+      if (errno == EINVAL) break; /* past CAP_LAST_CAP */
+      die(124, "capbset_drop");
+    }
+  }
+  if (prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_CLEAR_ALL, 0, 0, 0) != 0 && errno != EINVAL) die(124, "ambient_clear");
+  unsigned long bits = SECBIT_NOROOT | SECBIT_NOROOT_LOCKED | SECBIT_NO_SETUID_FIXUP_LOCKED | SECBIT_KEEP_CAPS_LOCKED |
+                       SECBIT_NO_CAP_AMBIENT_RAISE | SECBIT_NO_CAP_AMBIENT_RAISE_LOCKED;
+  if (prctl(PR_SET_SECUREBITS, bits, 0, 0, 0) != 0) die(124, "securebits");
+}
+
+/* After the uid drop: effective, permitted, inheritable and bounding sets must all be empty. */
+static void verify_no_capabilities(void) {
+  struct __user_cap_header_struct hdr = {_LINUX_CAPABILITY_VERSION_3, 0};
+  struct __user_cap_data_struct data[2];
+  memset(data, 0, sizeof data);
+  if (syscall(SYS_capget, &hdr, data) != 0) die(124, "capget");
+  for (int i = 0; i < 2; i++) {
+    if (data[i].effective || data[i].permitted || data[i].inheritable) {
+      dprintf(2, "kc-exec: capabilities survived the drop\n");
+      _exit(124);
+    }
+  }
+  for (int cap = 0; cap <= 63; cap++) {
+    int r = prctl(PR_CAPBSET_READ, cap, 0, 0, 0);
+    if (r < 0) break;
+    if (r == 1) {
+      dprintf(2, "kc-exec: bounding set not empty\n");
+      _exit(124);
+    }
+  }
+}
+
 static long arg_num(const char *s, const char *name) {
   char *end;
   errno = 0;
@@ -166,6 +208,7 @@ int main(int argc, char **argv) {
   set_limit(RLIMIT_MSGQUEUE, 0, 0, "RLIMIT_MSGQUEUE");
 
   if (chdir(workdir) != 0) die(122, "chdir");
+  strip_capabilities();
   if (setgroups(0, NULL) != 0) die(123, "setgroups");
   if (setresgid(gid, gid, gid) != 0) die(123, "setresgid");
   if (setresuid(uid, uid, uid) != 0) die(123, "setresuid");
@@ -174,6 +217,7 @@ int main(int argc, char **argv) {
     dprintf(2, "kc-exec: privilege drop did not stick\n");
     _exit(123);
   }
+  verify_no_capabilities();
 
   install_seccomp();
 

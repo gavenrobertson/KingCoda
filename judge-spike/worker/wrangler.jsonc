@@ -1,6 +1,7 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   // Phase 1 judge spike: runs the probe suite against a real Cloudflare Container (ARCHITECTURE §5.7).
+  // New accounts only get the durable_object scheduling policy, so the Durable Object starts the box itself.
   "name": "kingcoda-judge-spike",
   "main": "src/index.ts",
   "compatibility_date": "2026-10-13",
@@ -8,13 +9,10 @@
   "containers": [
     {
       "class_name": "JudgeBox",
-      "image": "../Dockerfile",
-      "image_build_context": "..",
-      // Matches the planned production box: 1 vCPU, 3 GiB.
-      "instance_type": { "vcpu": 1, "memory_mib": 3072, "disk_mb": 8000 },
-      "max_instances": 2,
+      "scheduling_policy": "durable_object",
+      "images": { "base": { "dockerfile": "../Dockerfile", "build_context": ".." } },
     },
   ],
   "durable_objects": { "bindings": [{ "name": "JUDGE_BOX", "class_name": "JudgeBox" }] },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["JudgeBox"] }],
+  "exports": { "JudgeBox": { "type": "durable-object", "storage": "sqlite" } },
 }

@@ -97,6 +97,7 @@ jobs:
           for id in $(pnpm exec wrangler containers list --json 2>/dev/null | jq -r '.[] | select(.name | startswith("kingcoda-judge-spike")) | .id'); do
             pnpm exec wrangler containers delete "$id" || true
           done
-          for img in $(pnpm exec wrangler containers images list --json 2>/dev/null | jq -r '.[] | select(.name | contains("kingcoda-judge-spike")) | "\(.name):\(.tag)"'); do
+          pnpm exec wrangler containers images list --json || true
+          for img in $(pnpm exec wrangler containers images list --json 2>/dev/null | jq -r '.[] | select(.name | contains("kingcoda-judge-spike")) | .name as $n | ((.tags // []) + [.tag // empty])[] | "\($n):\(.)"'); do
             pnpm exec wrangler containers images delete "$img" || true
           done

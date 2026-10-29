@@ -347,6 +347,32 @@ export const probes: Probe[] = [
     check: stdoutIs('-1 -1 -1 -1 -1'),
   },
   {
+    name: 'sandboxed process holds no capabilities at all',
+    group: 'isolation',
+    job: {
+      ...base,
+      lang: 'python',
+      source:
+        'for l in open("/proc/self/status"):\n    if l.startswith(("CapInh","CapPrm","CapEff","CapBnd","CapAmb","NoNewPrivs")):\n        print(l.split()[0], l.split()[1])\n',
+      inputs: [''],
+    },
+    check: expectStatus('ok', (t) => {
+      const caps = Object.fromEntries(
+        t.stdout
+          .trim()
+          .split('\n')
+          .map((l) => l.split(' ') as [string, string]),
+      );
+      const bad = ['CapInh:', 'CapPrm:', 'CapEff:', 'CapBnd:', 'CapAmb:'].filter(
+        (k) => !/^0+$/.test(caps[k] ?? 'missing'),
+      );
+      if (caps['NoNewPrivs:'] !== '1') bad.push('NoNewPrivs');
+      return bad.length
+        ? `still set: ${bad.join(' ')} (${t.stdout.trim().replace(/\n/g, ', ')})`
+        : null;
+    }),
+  },
+  {
     name: 'kill(-1) cannot take down the supervisor',
     group: 'isolation',
     job: {

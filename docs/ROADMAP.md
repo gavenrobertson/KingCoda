@@ -23,11 +23,11 @@ _Needs from you before deploy: Cloudflare account ID + API token (D9). D3 is con
 
 **Exit**: sign in with GitHub on staging, see an empty-state problems page in the KingCoda shell, CI green, and spike report delivered. _Status: met locally; staging deploy and the deployed spike run need the Cloudflare account (D9)._
 
-## Phase 2 — Browse, solve, judge (3 languages, 25 problems)
+## Phase 2 — Browse, solve, judge (C++, 25 problems)
 
 _Needs: D3 confirmed by the spike_
 
-- [ ] `packages/problem-schema` + `packages/harness` for Python, JavaScript and C++ (types: scalars, arrays, 2D arrays, strings, ListNode, TreeNode).
+- [x] `packages/problem-schema` + `packages/harness` (types: scalars, arrays, 2D arrays, strings, ListNode, TreeNode). _C++ is the only judged language in Phase 2 (decided 2026-10-29); Python and JavaScript drivers are built and tested, and switch on in Phase 3._
 - [ ] `judge-image` + `kc-run`: compile/run, rlimits, seccomp, output caps, rusage; hostile-code test suite.
 - [ ] `apps/judge`: queue consumer, JudgePool DO (warm floor, recycle policy), JudgeBox container, checker variants, verdict write-back.
 - [ ] UserHub DO: WebSocket push of verdicts, with polling fallback.
@@ -38,9 +38,9 @@ _Needs: D3 confirmed by the spike_
 
 **Exit**: on staging, a user can find a problem, fail it, read the diff, fix it and get Accepted in Python, JS or C++. The hostile suite passes on a deployed box.
 
-## Phase 3 — Content pipeline, 150 problems, all languages
+## Phase 3 — Content pipeline, 150 problems, more languages
 
-- [ ] Harness for TypeScript, Java and Go; design-problem (`kind: design`) support.
+- [ ] Turn on Python and JavaScript; add TypeScript, Java and Go; design-problem (`kind: design`) support.
 - [ ] `tools/pipeline validate` with all 10 checks (ARCHITECTURE §6.4), including the brute-force-must-TLE complexity gate and per-language limit calibration.
 - [ ] Near-duplicate detector (MinHash + structural fingerprint).
 - [ ] Drafting workflow in Claude Code sessions (D6) with drafts → review PR → publish; optional Claude API bulk mode.
