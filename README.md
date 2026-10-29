@@ -11,6 +11,7 @@ A competitive programming practice platform where solving a problem feels like w
 | Path                      | What                                                                                     |
 | ------------------------- | ---------------------------------------------------------------------------------------- |
 | `apps/web`                | Next.js App Router on Cloudflare Workers (OpenNext), Better Auth                         |
+| `apps/judge`              | Judge Worker: queue consumer, `JudgeBox` Durable Object + container, RPC for the web app |
 | `packages/ui`             | Design tokens (single source in `src/tokens.ts`), theme CSS, UI components               |
 | `packages/db`             | Drizzle schema for D1 and its SQL migrations                                             |
 | `packages/game`           | Pure reward-loop rules (levels so far; XP, streaks and badges in Phase 4)                |
@@ -41,7 +42,23 @@ pnpm --filter @kingcoda/web db:migrate:local
 pnpm dev
 ```
 
-The app runs at http://localhost:3000 with emulated D1, KV and R2 (state lives in `apps/web/.wrangler/`). To sign in locally, create a GitHub OAuth app with callback `http://localhost:3000/api/auth/callback/github` and add `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` to `apps/web/.dev.vars` (see `.dev.vars.example`).
+The app runs at http://localhost:3000 with emulated D1, KV and R2 (state lives in `apps/web/.wrangler/`).
+
+To run code locally you also need problems, a judge box and the judge Worker (start the judge before the web app, which binds to it when it starts):
+
+```bash
+node tools/pipeline/src/cli.ts build && node tools/pipeline/src/cli.ts publish local
+```
+
+```bash
+docker build -t kingcoda-judge judge && docker run -d --privileged --cgroupns private -p 18080:8080 kingcoda-judge
+```
+
+```bash
+pnpm --filter @kingcoda/judge dev
+```
+
+To sign in locally, create a GitHub OAuth app with callback `http://localhost:3000/api/auth/callback/github` and add `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` to `apps/web/.dev.vars` (see `.dev.vars.example`).
 
 ## Checks
 
@@ -53,7 +70,7 @@ pnpm lint && pnpm format:check && pnpm tokens:check && pnpm typecheck && pnpm te
 pnpm e2e
 ```
 
-`pnpm e2e` runs Playwright against a throwaway local database. Where a Chromium is pre-installed instead of Playwright's own, set `PW_CHROMIUM_PATH` to it.
+`pnpm e2e` runs Playwright against a throwaway local stack (fresh database, two published problems, the judge Worker); it needs the Docker judge box running. Where a Chromium is pre-installed instead of Playwright's own, set `PW_CHROMIUM_PATH` to it.
 
 After changing `packages/db/src/schema.ts`, generate a migration with `pnpm --filter @kingcoda/db generate`. After changing `packages/ui/src/tokens.ts`, regenerate the theme with `pnpm --filter @kingcoda/ui build:css`. CI fails if either is forgotten.
 

@@ -28,23 +28,24 @@ _Needs from you before deploy: Cloudflare account ID + API token (D9). D3 is con
 _Needs: D3 confirmed by the spike_
 
 - [x] `packages/problem-schema` + `packages/harness` (types: scalars, arrays, 2D arrays, strings, ListNode, TreeNode). _C++ is the only judged language in Phase 2 (decided 2026-10-29); Python and JavaScript drivers are built and tested, and switch on in Phase 3._
-- [ ] `judge-image` + `kc-run`: compile/run, rlimits, seccomp, output caps, rusage; hostile-code test suite.
-- [ ] `apps/judge`: queue consumer, JudgePool DO (warm floor, recycle policy), JudgeBox container, checker variants, verdict write-back.
-- [ ] UserHub DO: WebSocket push of verdicts, with polling fallback.
-- [ ] Problem browser: search (FTS5), difficulty/topic/status/track filters, keyset pagination, "Pick one for me", progress sidebar, designed empty and error states.
-- [ ] Workspace: resizable split, Markdown + KaTeX statement, examples, constraints, Monaco, language picker, starter code, per-language autosave, custom input, Run vs. Submit, shortcuts, test console, verdict panel with sample-test diff, mobile "bigger screen" card.
-- [x] 25 hand-written seed problems (9 Easy, 11 Medium, 5 Hard) in the package format, validated by pipeline v0.
-- [ ] Rate limiting on run/submit.
+- [x] Judge image + `kc-run`: multi-file programs, whole-suite inputs, precompiled C++ prelude (~0.8 s compiles), `-Werror=return-type`; 32 hostile probes + 8 end-to-end verdicts through the box in CI.
+- [x] `packages/judge-core`: job building (tests grouped into processes, every process gets the full time limit, public and hidden cases never share one), verdicts AC/WA/TLE/MLE/OLE/RE/CE/IE at the failing case, exact/float/unordered checkers, custom input.
+- [x] `apps/judge`: queue consumer, `JudgeBox` Durable Object starting the container, RPC entry point for the web app, verdict + progress write-back, retries then IE, production smoke test in the Deploy workflow. _One box (`box-0`): `JudgePool` with several boxes and a warm floor waits until there are more users. Recycle policy changed: on stray processes and every 200 jobs, not after every failing verdict (a recycle costs a 10–19 s cold start)._
+- [ ] UserHub DO: WebSocket push of verdicts. _Deferred to Phase 4 with the reward moments that need it; Phase 2 polls every 0.6 s._
+- [x] Problem browser: search (FTS5), difficulty/topic/status filters, keyset pagination, "Pick one for me", progress sidebar, designed empty and error states. _Track filter arrives with tracks in Phase 5._
+- [x] Workspace: resizable split, sanitized Markdown + KaTeX statement, examples, constraints, hints that unlock after wrong answers, Monaco (served from our own origin), starter code, autosave, custom input, Run vs. Submit, Ctrl+Enter / Ctrl+Shift+Enter, test console, verdict panel with example diff, submission history, mobile "bigger screen" card. _Language picker shows C++ only until Phase 3._
+- [x] 25 hand-written seed problems (9 Easy, 11 Medium, 5 Hard) in the package format, validated by pipeline v0; `kc-pipeline publish` versions them into D1 + R2.
+- [x] Rate limiting on run/submit (6 submits, 20 runs a minute per user).
 
-**Exit**: on staging, a user can find a problem, fail it, read the diff, fix it and get Accepted in Python, JS or C++. The hostile suite passes on a deployed box.
+**Exit**: a user can find a problem, fail it, read the diff, fix it and get Accepted (C++). The hostile suite passes on a deployed box. _Status: the journey is a Playwright test against the real sandbox in CI; production deploy via the Deploy workflow. There is no separate staging environment (personal use)._
 
 ## Phase 3 — Content pipeline, 150 problems, more languages
 
 - [ ] Turn on Python and JavaScript; add TypeScript, Java and Go; design-problem (`kind: design`) support.
-- [ ] `tools/pipeline validate` with all 10 checks (ARCHITECTURE §6.4), including the brute-force-must-TLE complexity gate and per-language limit calibration.
+- [ ] `tools/pipeline validate` with all 10 checks (ARCHITECTURE §6.4), including the brute-force-must-TLE complexity gate and per-language limit calibration. _Needed: Phase 2 found Twin Coins accepting an O(n²) solution until its largest tests were made adversarial; the other 24 problems need the same gate._
 - [ ] Near-duplicate detector (MinHash + structural fingerprint).
 - [ ] Drafting workflow in Claude Code sessions (D6) with drafts → review PR → publish; optional Claude API bulk mode.
-- [ ] `tools/pipeline publish` in CI → R2 test sets + versioned D1 content.
+- [ ] `tools/pipeline publish` in CI on merge to `main` (the command exists since Phase 2; the Deploy workflow runs it by hand).
 - [ ] Editorials for every problem: intuition → brute force → optimal → complexity, plus reference solutions in all 6 languages; locked until solve or reveal (reveals tracked).
 - [ ] Runtime/memory percentiles + distribution chart.
 - [ ] **150 validated problems** at ~35/45/20 across the topic matrix; tracks seeded.
