@@ -33,8 +33,9 @@ var languages = map[string]language{
 	"cpp": {
 		file: "main.cpp",
 		compile: func(int) []string {
-			// kc_prelude.hpp (and its precompiled .gch) live in the image, matching these exact flags.
-			return []string{"/usr/bin/g++", "-O2", "-std=c++20", "-pipe", "-I/usr/local/include/kingcoda", "-o", "main", "main.cpp"}
+			// kc_prelude.hpp (and its precompiled .gch) live in the image, built with the same -O2 and
+			// -std (warning flags don't affect PCH use). A missing return is an error, not silent UB.
+			return []string{"/usr/bin/g++", "-O2", "-std=c++20", "-pipe", "-Werror=return-type", "-I/usr/local/include/kingcoda", "-o", "main", "main.cpp"}
 		},
 		run:           func(int) []string { return []string{"./main"} },
 		nproc:         16,

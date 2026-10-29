@@ -18,3 +18,4 @@ next-env.d.ts
 content/build/
 __pycache__/
 *.pyc
+apps/web/public/monaco/

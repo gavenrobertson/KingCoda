@@ -10,7 +10,30 @@ def edge_cases():
     ]
 
 
+def worst_case(rng):
+    # A quadratic scan must look at every pair: either no pair exists (even weights, odd target)
+    # or the only pair ends at the last coin.
+    n = 100000
+    if rng.random() < 0.5:
+        weights = [2 * rng.randint(-(10**8), 10**8) for _ in range(n)]
+        return {"weights": weights, "target": 2 * rng.randint(-(10**8), 10**8) + 1}
+    weights = rng.sample(range(1, 10**9), n)
+    target = weights[rng.randrange(n - 1)] + weights[-1]
+    # Keep the pair unique: drop any other coin that would complete one.
+    seen, unique = set(), []
+    for w in weights[:-1]:
+        if target - w in seen and target - w != w:
+            continue
+        seen.add(w)
+        unique.append(w)
+    i = rng.randrange(len(unique))
+    unique[i] = target - weights[-1]
+    return {"weights": unique + [weights[-1]], "target": target}
+
+
 def random_case(rng, size):
+    if size == "max" and rng.random() < 0.67:
+        return worst_case(rng)
     n = {"small": rng.randint(2, 10), "medium": rng.randint(2, 3000), "max": 100000}[size]
     span = {"small": 6, "medium": 10**4, "max": 10**9}[size]
     weights = [rng.randint(-span, span) for _ in range(n)]

@@ -2,7 +2,14 @@ import type { NextConfig } from 'next';
 import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare';
 
 const nextConfig: NextConfig = {
-  transpilePackages: ['@kingcoda/ui', '@kingcoda/db', '@kingcoda/game'],
+  transpilePackages: [
+    '@kingcoda/ui',
+    '@kingcoda/db',
+    '@kingcoda/game',
+    '@kingcoda/judge-core',
+    '@kingcoda/harness',
+    '@kingcoda/problem-schema',
+  ],
   typedRoutes: true,
   poweredByHeader: false,
 };

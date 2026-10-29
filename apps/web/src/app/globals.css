@@ -17,6 +17,11 @@
   a {
     color: var(--kc-violet-light);
   }
+  /* Links inside running text are underlined, not told apart by color alone (WCAG 1.4.1). */
+  :where(p, li) a {
+    text-decoration-line: underline;
+    text-underline-offset: 3px;
+  }
   :focus-visible {
     outline: 2px solid var(--kc-violet-light);
     outline-offset: 2px;
@@ -35,4 +40,71 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Problem statements (sanitized Markdown from lib/markdown). */
+.kc-prose {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--kc-text);
+  line-height: 1.6;
+}
+.kc-prose :where(p, ul, ol, table, pre, blockquote) {
+  margin: 0;
+}
+.kc-prose :where(ul, ol) {
+  padding-left: 20px;
+}
+.kc-prose ul {
+  list-style: disc;
+}
+.kc-prose ol {
+  list-style: decimal;
+}
+.kc-prose :where(code):not(pre code) {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: var(--kc-raised);
+  border: 1px solid var(--kc-border-subtle);
+}
+.kc-prose pre {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--kc-sunken);
+  border: 1px solid var(--kc-border-subtle);
+  overflow-x: auto;
+}
+.kc-prose table {
+  border-collapse: collapse;
+}
+.kc-prose :where(th, td) {
+  border: 1px solid var(--kc-border);
+  padding: 4px 10px;
+}
+.kc-prose strong {
+  font-weight: 700;
+}
+
+/* Verdict and hint reveal (DESIGN.md › Motion); the reduced-motion rule above stills it. */
+@keyframes kc-pop {
+  0% {
+    transform: translateY(12px) scale(0.96);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(-2px) scale(1.01);
+    opacity: 1;
+  }
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+.kc-pop {
+  animation: kc-pop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
 }

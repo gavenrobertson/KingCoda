@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import { cookies } from 'next/headers';
-import { SiteHeader } from '@/components/SiteHeader';
 import { THEME_COOKIE, parseTheme } from '@/lib/theme';
 import './globals.css';
 
@@ -26,8 +25,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         >
           Skip to content
         </a>
-        <SiteHeader theme={theme} />
-        <main id="main">{children}</main>
+        {children}
       </body>
     </html>
   );

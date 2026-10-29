@@ -2,12 +2,12 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { signUp } from './helpers';
 
-test('signed-out visitor sees the shell and an empty problem bank', async ({ page }) => {
+test('signed-out visitor sees the shell and the problem bank', async ({ page }) => {
   await page.goto('/');
   await expect(page).toHaveURL(/\/problems$/);
   await expect(page.getByRole('heading', { name: 'Problems', level: 1 })).toBeVisible();
-  await expect(page.getByText('No problems yet')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Sign in' })).toBeVisible();
+  await expect(page.getByText('2 problems', { exact: true })).toBeVisible();
+  await expect(page.getByRole('banner').getByRole('link', { name: 'Sign in' })).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 });
 

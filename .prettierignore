@@ -8,3 +8,5 @@ packages/db/migrations/
 judge/kc-run/go.sum
 **/cloudflare-env.d.ts
 packages/ui/styles/theme.css
+apps/web/public/monaco/
+content/build/

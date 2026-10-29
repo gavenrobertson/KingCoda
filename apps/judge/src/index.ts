@@ -35,9 +35,13 @@ function deps(env: Env): JudgeDeps {
 
 /** The web Worker calls these through its service binding. */
 export default class Judge extends WorkerEntrypoint<Env> {
-  /** Queue a submission whose row and code the web Worker has already written. */
-  async submit(submissionId: string): Promise<void> {
+  /**
+   * Queue a submission whose row and code the web Worker has already written. Returns an explicit
+   * acknowledgement so the caller can tell a real judge from an unbound service stub.
+   */
+  async submit(submissionId: string): Promise<{ queued: true }> {
     await this.env.JOBS.send({ submissionId });
+    return { queued: true };
   }
 
   /** Wake the box when someone opens a problem, so their first Run skips the cold start. */
@@ -47,8 +51,10 @@ export default class Judge extends WorkerEntrypoint<Env> {
     this.ctx.waitUntil(box.warm().catch(() => undefined));
   }
 
-  override async fetch(): Promise<Response> {
-    return new Response('KingCoda judge: no public endpoints', { status: 404 });
+  /** Liveness only (dev tooling waits on it). Judging is reachable only through RPC. */
+  override async fetch(request: Request): Promise<Response> {
+    const ok = new URL(request.url).pathname === '/';
+    return new Response(ok ? 'KingCoda judge' : 'Not found', { status: ok ? 200 : 404 });
   }
 
   override async queue(batch: MessageBatch<JobMessage>): Promise<void> {
@@ -59,7 +65,8 @@ export default class Judge extends WorkerEntrypoint<Env> {
         await judgeSubmission(d, id);
         msg.ack();
       } catch (e) {
-        const message = (e as Error).message;
+        const err = e as Error & { cause?: Error };
+        const message = err.cause ? `${err.message} (${err.cause.message})` : err.message;
         console.error(`judge ${id} attempt ${msg.attempts}: ${message}`);
         if (msg.attempts >= MAX_ATTEMPTS) {
           await markError(d.db, id, 'The judge is unavailable right now. Try again in a minute.');

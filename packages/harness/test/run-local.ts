@@ -23,10 +23,14 @@ export function runLocal(lang: Language, program: Program, stdin: string): Local
     if (lang === 'python') cmd = ['python3', ['-S', '-B', 'driver.py']];
     else if (lang === 'javascript') cmd = ['node', ['main.js']];
     else {
-      const c = spawnSync('g++', ['-O2', '-std=c++20', '-I.', '-o', 'main', 'main.cpp'], {
-        cwd: dir,
-        encoding: 'utf8',
-      });
+      const c = spawnSync(
+        'g++',
+        ['-O2', '-std=c++20', '-Werror=return-type', '-I.', '-o', 'main', 'main.cpp'],
+        {
+          cwd: dir,
+          encoding: 'utf8',
+        },
+      );
       if (c.status !== 0)
         return { stdout: '', stderr: c.stderr, status: c.status, compileError: c.stderr };
       cmd = ['./main', []];

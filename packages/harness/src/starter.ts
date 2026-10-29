@@ -68,7 +68,7 @@ function ${sig.function}(${sig.params.map((p) => p.name).join(', ')}) {
       return `${list ? CPP_LIST + '\n' : ''}${tree ? CPP_TREE + '\n' : ''}class Solution {
 public:
     ${cppType[sig.returns]} ${sig.function}(${params}) {
-
+        return {};
     }
 };
 `;

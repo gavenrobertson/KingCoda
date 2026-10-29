@@ -19,10 +19,14 @@ export class CompiledCpp {
     const dir = mkdtempSync(join(tmpdir(), 'kc-ref-'));
     for (const [name, content] of Object.entries(buildProgram(sig, 'cpp', code).files))
       writeFileSync(join(dir, name), content);
-    const r = spawnSync('g++', ['-O2', '-std=c++20', '-I.', '-o', 'main', 'main.cpp'], {
-      cwd: dir,
-      encoding: 'utf8',
-    });
+    const r = spawnSync(
+      'g++',
+      ['-O2', '-std=c++20', '-Werror=return-type', '-I.', '-o', 'main', 'main.cpp'],
+      {
+        cwd: dir,
+        encoding: 'utf8',
+      },
+    );
     if (r.status !== 0) {
       rmSync(dir, { recursive: true, force: true });
       throw new Error(`reference.cpp does not compile:\n${r.stderr}`);

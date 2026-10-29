@@ -70,6 +70,11 @@ const CHECKS: Array<{
     expect: { verdict: 'CE' },
   },
   {
+    name: 'missing return is a compile error, not undefined behaviour',
+    code: solution(''),
+    expect: { verdict: 'CE' },
+  },
+  {
     name: 'Run shows the diff',
     code: solution('return 7;'),
     mode: 'run',

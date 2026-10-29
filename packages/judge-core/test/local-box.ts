@@ -36,7 +36,16 @@ export function runLocalBox(job: BoxJob): BoxResult {
       writeFileSync(join(dir, name), content);
     const cc = spawnSync(
       'g++',
-      ['-O2', '-std=c++20', '-pipe', `-I${INCLUDE}`, '-o', 'main', 'main.cpp'],
+      [
+        '-O2',
+        '-std=c++20',
+        '-pipe',
+        '-Werror=return-type',
+        `-I${INCLUDE}`,
+        '-o',
+        'main',
+        'main.cpp',
+      ],
       {
         cwd: dir,
         encoding: 'utf8',

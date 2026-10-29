@@ -19,6 +19,12 @@
   ],
   "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000000" }],
   "r2_buckets": [{ "binding": "CODE", "bucket_name": "kingcoda-code-local" }],
+  // The judge Worker's RPC entrypoint (apps/judge). Locally, run `pnpm --filter @kingcoda/judge dev` too.
+  "services": [{ "binding": "JUDGE", "service": "kingcoda-judge" }],
+  "ratelimits": [
+    { "name": "SUBMIT_LIMIT", "namespace_id": "1001", "simple": { "limit": 6, "period": 60 } },
+    { "name": "RUN_LIMIT", "namespace_id": "1002", "simple": { "limit": 20, "period": 60 } },
+  ],
   "env": {
     // Playwright only (KC_E2E=1): local emulated bindings plus the test-only password sign-in switch.
     "e2e": {
@@ -37,6 +43,11 @@
       ],
       "kv_namespaces": [{ "binding": "CACHE", "id": "000000000000000000000000000000e2" }],
       "r2_buckets": [{ "binding": "CODE", "bucket_name": "kingcoda-code-e2e" }],
+      "services": [{ "binding": "JUDGE", "service": "kingcoda-judge-e2e" }],
+      "ratelimits": [
+        { "name": "SUBMIT_LIMIT", "namespace_id": "1001", "simple": { "limit": 6, "period": 60 } },
+        { "name": "RUN_LIMIT", "namespace_id": "1002", "simple": { "limit": 20, "period": 60 } },
+      ],
     },
     "staging": {
       "name": "kingcoda-web-staging",
@@ -54,6 +65,11 @@
       ],
       "kv_namespaces": [{ "binding": "CACHE", "id": "REPLACE_WITH_STAGING_KV_ID" }],
       "r2_buckets": [{ "binding": "CODE", "bucket_name": "kingcoda-code-staging" }],
+      "services": [{ "binding": "JUDGE", "service": "kingcoda-judge-staging" }],
+      "ratelimits": [
+        { "name": "SUBMIT_LIMIT", "namespace_id": "1001", "simple": { "limit": 6, "period": 60 } },
+        { "name": "RUN_LIMIT", "namespace_id": "1002", "simple": { "limit": 20, "period": 60 } },
+      ],
     },
     "production": {
       "name": "kingcoda-web",
@@ -71,6 +87,11 @@
       ],
       "kv_namespaces": [{ "binding": "CACHE", "id": "e488b105be32480db51efee987f1d641" }],
       "r2_buckets": [{ "binding": "CODE", "bucket_name": "kingcoda-code" }],
+      "services": [{ "binding": "JUDGE", "service": "kingcoda-judge" }],
+      "ratelimits": [
+        { "name": "SUBMIT_LIMIT", "namespace_id": "1001", "simple": { "limit": 6, "period": 60 } },
+        { "name": "RUN_LIMIT", "namespace_id": "1002", "simple": { "limit": 20, "period": 60 } },
+      ],
     },
   },
 }

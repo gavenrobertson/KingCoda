@@ -12,6 +12,7 @@ export default tseslint.config(
       '**/.next/**',
       '**/.open-next/**',
       '**/.wrangler/**',
+      'apps/web/public/monaco/**',
       '**/coverage/**',
       '**/playwright-report/**',
       '**/test-results/**',

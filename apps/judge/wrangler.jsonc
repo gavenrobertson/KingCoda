@@ -31,6 +31,7 @@
   },
   "env": {
     "e2e": {
+      "name": "kingcoda-judge-e2e",
       "vars": { "APP_ENV": "local", "JUDGE_BOX_URL": "http://localhost:18080" },
       "d1_databases": [
         {

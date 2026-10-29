@@ -20,10 +20,11 @@ export default defineConfig({
     { name: 'mobile', use: { ...devices['Pixel 7'] } },
   ],
   webServer: {
-    command: `node e2e/prepare-db.ts && next dev --port ${PORT}`,
+    // Fresh state, two published problems, the judge Worker and the web app (needs the Docker judge box).
+    command: `node e2e/serve.ts`,
     url: `http://localhost:${PORT}/problems`,
-    env: { KC_E2E: '1', NEXT_TELEMETRY_DISABLED: '1' },
+    env: { PORT: String(PORT) },
     reuseExistingServer: false,
-    timeout: 120_000,
+    timeout: 240_000,
   },
 });

@@ -80,12 +80,12 @@ Up `#2DD4A7` ▲ · Down `#FF8A9C` ▼ · No change `#A3AABD` —. Every arrow c
 
 ## Color tokens — light
 
-The canvas is dark only. The derived light theme lives in `packages/ui/src/tokens.ts`; every text pair is checked by `pnpm tokens:check` in CI (WCAG AA: 4.5:1 text, 3:1 large text and UI):
+The canvas is dark only. The derived light theme lives in `packages/ui/src/tokens.ts`; every text pair, on surface and on sunken panels, is checked by `pnpm tokens:check` in CI (WCAG AA: 4.5:1 text, 3:1 large text and UI):
 
 - Ground `#F7F7FB`, surface `#FFFFFF`, raised `#F0F0F6`, border `#E2E3EC`, text `#14151C`, muted `#565C70`.
 - Brand violet darkens to `#5442E0` (already on the canvas's light logo tile) for AA on white.
 - Gold as _text_ on light becomes `#8A5A00`; gold fills stay `#FFC94A` with `--gold-ink` text.
-- Difficulty foregrounds darken (Easy `#066F55`, Medium `#8A5800`, Hard `#B32843`) so they pass AA on their own 14% chip tint.
+- Difficulty foregrounds darken (Easy `#066F55`, Medium `#845400`, Hard `#B32843`) so they pass AA on their own 14% chip tint.
 
 ## Shape & spacing
 
