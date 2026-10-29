@@ -59,7 +59,8 @@
     },
     "production": {
       "name": "kingcoda-judge",
-      "vars": { "APP_ENV": "production" },
+      // No Docker box in production: an empty JUDGE_BOX_URL means "use the JudgeBox container".
+      "vars": { "APP_ENV": "production", "JUDGE_BOX_URL": "" },
       "d1_databases": [
         {
           "binding": "DB",
