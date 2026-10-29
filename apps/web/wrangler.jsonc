@@ -42,7 +42,7 @@
       "name": "kingcoda-web-staging",
       "vars": {
         "APP_ENV": "staging",
-        "BETTER_AUTH_URL": "https://kingcoda-web-staging.workers.dev",
+        "BETTER_AUTH_URL": "https://kingcoda-web-staging.gaven-robertson.workers.dev",
       },
       "d1_databases": [
         {
@@ -57,16 +57,16 @@
     },
     "production": {
       "name": "kingcoda-web",
-      "vars": { "APP_ENV": "production", "BETTER_AUTH_URL": "https://kingcoda-web.workers.dev" },
+      "vars": { "APP_ENV": "production", "BETTER_AUTH_URL": "https://kingcoda-web.gaven-robertson.workers.dev" },
       "d1_databases": [
         {
           "binding": "DB",
           "database_name": "kingcoda",
-          "database_id": "REPLACE_WITH_PRODUCTION_D1_ID",
+          "database_id": "eb5a699b-562a-4750-83f9-9b63d9d95eec",
           "migrations_dir": "../../packages/db/migrations",
         },
       ],
-      "kv_namespaces": [{ "binding": "CACHE", "id": "REPLACE_WITH_PRODUCTION_KV_ID" }],
+      "kv_namespaces": [{ "binding": "CACHE", "id": "e488b105be32480db51efee987f1d641" }],
       "r2_buckets": [{ "binding": "CODE", "bucket_name": "kingcoda-code" }],
     },
   },
