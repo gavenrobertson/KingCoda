@@ -1,0 +1,67 @@
+name: Deploy
+
+# Manual: deploys the judge (Worker + container) and the web app to production, publishes the
+# problem bank, then smoke-tests the deployed judge with a real Run.
+# Needs repo secrets CLOUDFLARE_API_TOKEN (Workers, Containers, D1, R2, Queues) and CLOUDFLARE_ACCOUNT_ID.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CI: '1'
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Queues
+        working-directory: apps/judge
+        run: |
+          for q in judge-jobs judge-jobs-dlq; do
+            pnpm exec wrangler queues info "$q" >/dev/null 2>&1 || pnpm exec wrangler queues create "$q"
+          done
+
+      - name: Migrate D1
+        working-directory: apps/judge
+        run: pnpm exec wrangler d1 migrations apply DB --env production --remote
+
+      - name: Deploy the judge (Worker, queue consumer, container)
+        working-directory: apps/judge
+        run: pnpm exec wrangler deploy --env production
+
+      - name: Publish the problem bank
+        run: |
+          node tools/pipeline/src/cli.ts build
+          node tools/pipeline/src/cli.ts publish production
+
+      - name: Deploy the web app
+        working-directory: apps/web
+        run: |
+          pnpm exec opennextjs-cloudflare build --env production
+          pnpm exec opennextjs-cloudflare deploy --env production
+
+      - name: Smoke-test the deployed judge
+        working-directory: apps/judge
+        run: node scripts/smoke.ts
+
+      - name: Smoke-test the web app
+        run: |
+          sub=$(curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" | jq -r .result.subdomain)
+          page=$(curl -fsS "https://kingcoda-web.$sub.workers.dev/problems")
+          echo "$page" | grep -q "Twin Coins" || { echo "::error::problem list does not show the bank"; exit 1; }
+          curl -fsS -o /dev/null "https://kingcoda-web.$sub.workers.dev/problems/twin-coins"
