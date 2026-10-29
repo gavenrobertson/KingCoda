@@ -37,6 +37,8 @@ jobs:
         run: pnpm typecheck
       - name: Unit tests
         run: pnpm test
+      - name: Validate the problem bank
+        run: node tools/pipeline/src/cli.ts validate
       - name: Build Worker bundle
         working-directory: apps/web
         run: pnpm exec opennextjs-cloudflare build
