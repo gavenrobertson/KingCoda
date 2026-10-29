@@ -1,0 +1,34 @@
+number: 7
+slug: throne-room-paths
+title: Throne Room Paths
+difficulty: Hard
+tags: [DP 2D, Grid]
+signature:
+  function: countSafePaths
+  params:
+    - { name: hall, type: 'string[]' }
+    - { name: courage, type: int }
+  returns: int
+limits: { timeMs: 1000, memoryMb: 256 }
+constraints:
+  - '1 ≤ hall.length, hall[r].length ≤ 200, all rows the same length'
+  - "hall contains only '.', '#' and 'T'"
+  - '0 ≤ courage ≤ 20'
+examples:
+  - args: { hall: ['..', '..'], courage: 0 }
+    output: 2
+  - args: { hall: ['.T.', '...', '..T'], courage: 1 }
+    output: 3
+    explanation: The throne itself is a trap, so routes over the other trap would need courage 2. The 3 routes that avoid it are fine.
+  - args: { hall: ['.T.', '...', '...'], courage: 0 }
+    output: 3
+    explanation: Of the 6 paths through the hall, 3 step on the trap.
+hints:
+  - text: Counting paths in a grid is a classic DP, but here the paths also remember how many traps they've crossed.
+    unlockAfterWrong: 2
+  - text: Let ways[r][c][t] be the number of paths reaching (r, c) having stepped on exactly t traps. Each square adds from the square above and to the left; a trap shifts t by one. Sum t = 0 … courage at the throne, mod 10⁹ + 7.
+    unlockAfterWrong: 4
+  - text: You only need the previous row, so memory can be O(columns × (courage + 1)).
+    unlockAfterWrong: 6
+license: CC-BY-SA-4.0
+source: Original KingCoda problem

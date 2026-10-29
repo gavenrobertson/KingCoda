@@ -1,0 +1,31 @@
+number: 6
+slug: rotated-treasury-search
+title: Rotated Treasury Search
+difficulty: Medium
+tags: [Binary Search]
+signature:
+  function: findVault
+  params:
+    - { name: vaults, type: 'int[]' }
+    - { name: target, type: int }
+  returns: int
+limits: { timeMs: 1000, memoryMb: 256 }
+constraints:
+  - '1 ≤ vaults.length ≤ 10⁵'
+  - '-10⁹ ≤ vaults[i], target ≤ 10⁹'
+  - All values in vaults are distinct.
+  - vaults is an increasing list rotated at an unknown point.
+examples:
+  - args: { vaults: [40, 50, 60, 10, 20, 30], target: 20 }
+    output: 4
+  - args: { vaults: [40, 50, 60, 10, 20, 30], target: 35 }
+    output: -1
+  - args: { vaults: [7], target: 7 }
+    output: 0
+hints:
+  - text: Cut the list at the middle. At least one half is in plain increasing order — which one?
+    unlockAfterWrong: 2
+  - text: If vaults[lo] ≤ vaults[mid] the left half is sorted; check whether target falls inside it and discard the other half. Otherwise the right half is sorted. O(log n).
+    unlockAfterWrong: 4
+license: CC-BY-SA-4.0
+source: Original KingCoda problem

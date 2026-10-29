@@ -1,0 +1,30 @@
+number: 20
+slug: quest-order
+title: Quest Order
+difficulty: Medium
+tags: [Graphs, Topological Sort]
+signature:
+  function: canFinishAll
+  params:
+    - { name: quests, type: int }
+    - { name: prereqs, type: 'int[][]' }
+  returns: bool
+limits: { timeMs: 1000, memoryMb: 256 }
+constraints:
+  - '1 ≤ quests ≤ 10⁵'
+  - '0 ≤ prereqs.length ≤ 2·10⁵'
+  - 'prereqs[i] = [a, b]: quest b must be finished before quest a (0 ≤ a, b < quests)'
+examples:
+  - args: { quests: 3, prereqs: [[1, 0], [2, 1]] }
+    output: true
+    explanation: Finish 0, then 1, then 2.
+  - args: { quests: 2, prereqs: [[1, 0], [0, 1]] }
+    output: false
+    explanation: Each quest waits on the other.
+hints:
+  - text: The quests are impossible exactly when the requirements contain a cycle.
+    unlockAfterWrong: 2
+  - text: Kahn's algorithm — count each quest's unmet requirements, repeatedly finish a quest with none left, and see whether every quest gets finished.
+    unlockAfterWrong: 4
+license: CC-BY-SA-4.0
+source: Original KingCoda problem

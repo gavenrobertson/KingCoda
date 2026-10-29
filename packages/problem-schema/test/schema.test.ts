@@ -48,6 +48,17 @@ describe('problemSchema', () => {
     expect(problemSchema.safeParse(bad).success).toBe(false);
   });
 
+  it('rejects parameter names reserved in any judged language', () => {
+    for (const name of ['requires', 'lambda', 'func', 'string']) {
+      const bad = {
+        ...valid,
+        signature: { ...valid.signature, params: [{ name, type: 'int' }] },
+        examples: [{ args: { [name]: 1 }, output: 1 }],
+      };
+      expect(problemSchema.safeParse(bad).success, name).toBe(false);
+    }
+  });
+
   it('rejects unknown keys (typos fail loudly)', () => {
     expect(problemSchema.safeParse({ ...valid, dificulty: 'Hard' }).success).toBe(false);
   });

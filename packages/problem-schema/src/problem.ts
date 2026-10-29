@@ -7,13 +7,38 @@ export type Language = (typeof LANGUAGES)[number];
 
 const camel = /^[a-z][a-zA-Z0-9]*$/;
 
+/** Words reserved in any language we judge now or plan to (C++, Python, JS/TS, Java, Go). */
+export const RESERVED_NAMES = new Set(
+  (
+    'alignas alignof and asm auto bitand bitor bool break case catch char class compl concept const consteval constexpr ' +
+    'constinit continue co_await co_return co_yield decltype default delete do double else enum explicit export extern ' +
+    'false float for friend goto if inline int long mutable namespace new noexcept not nullptr operator or private ' +
+    'protected public register reinterpret_cast requires return short signed sizeof static struct switch template this ' +
+    'throw true try typedef typeid typename union unsigned using virtual void volatile while xor ' +
+    'as assert async await def del elif except finally from global import in is lambda nonlocal pass raise with yield ' +
+    'None True False arguments debugger eval function instanceof let of typeof var abstract boolean byte extends final ' +
+    'implements interface native package strictfp super synchronized throws transient chan defer fallthrough func go ' +
+    'map range select type string vector list'
+  ).split(' '),
+);
+const notReserved = (n: string) => !RESERVED_NAMES.has(n);
+
 export const signatureSchema = z
   .object({
     /** Canonical camelCase name; Python gets snake_case automatically. */
-    function: z.string().regex(camel, 'camelCase, starting with a lowercase letter'),
+    function: z
+      .string()
+      .regex(camel, 'camelCase, starting with a lowercase letter')
+      .refine(notReserved, 'reserved word in a judged language'),
     params: z
       .array(
-        z.object({ name: z.string().regex(camel, 'camelCase parameter names'), type: valueType }),
+        z.object({
+          name: z
+            .string()
+            .regex(camel, 'camelCase parameter names')
+            .refine(notReserved, 'reserved word in a judged language'),
+          type: valueType,
+        }),
       )
       .min(1)
       .max(6),

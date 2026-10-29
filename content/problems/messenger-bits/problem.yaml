@@ -1,0 +1,26 @@
+number: 17
+slug: messenger-bits
+title: Messenger Bits
+difficulty: Easy
+tags: [Bit Manipulation, DP 1D]
+signature:
+  function: lanternCounts
+  params:
+    - { name: n, type: int }
+  returns: 'int[]'
+limits: { timeMs: 1000, memoryMb: 256 }
+constraints:
+  - '0 ≤ n ≤ 10⁵'
+examples:
+  - args: { n: 5 }
+    output: [0, 1, 1, 2, 1, 2]
+    explanation: '0 → 0, 1 → 1, 2 → 10, 3 → 11, 4 → 100, 5 → 101 in binary.'
+  - args: { n: 0 }
+    output: [0]
+hints:
+  - text: Look at i and i / 2. In binary, how do they differ?
+    unlockAfterWrong: 2
+  - text: Shifting right drops the lowest bit, so bits[i] = bits[i >> 1] + (i & 1). One pass, no per-number loop.
+    unlockAfterWrong: 4
+license: CC-BY-SA-4.0
+source: Original KingCoda problem

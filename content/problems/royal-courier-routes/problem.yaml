@@ -1,0 +1,28 @@
+number: 5
+slug: royal-courier-routes
+title: Royal Courier Routes
+difficulty: Medium
+tags: [Graphs, BFS]
+signature:
+  function: fewestSteps
+  params:
+    - { name: realm, type: 'string[]' }
+  returns: int
+limits: { timeMs: 1000, memoryMb: 256 }
+constraints:
+  - '1 ≤ realm.length ≤ 1000, 1 ≤ realm[r].length ≤ 1000, all rows the same length'
+  - "realm contains only '.', '#', 'S' and 'E', with exactly one 'S' and one 'E'"
+examples:
+  - args: { realm: ['S.#', '.##', '..E'] }
+    output: 4
+    explanation: 'Down, down, right, right: four steps around the walls.'
+  - args: { realm: ['S#E'] }
+    output: -1
+    explanation: The wall cuts the realm in two.
+hints:
+  - text: Every step costs the same, so the first time you reach a square is the fastest way there.
+    unlockAfterWrong: 2
+  - text: Breadth-first search from S over open squares, recording each square's distance. Stop when you pop E; if the queue empties first, answer -1.
+    unlockAfterWrong: 4
+license: CC-BY-SA-4.0
+source: Original KingCoda problem

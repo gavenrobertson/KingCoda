@@ -1,0 +1,28 @@
+number: 8
+slug: scroll-prefix-index
+title: Scroll Prefix Index
+difficulty: Medium
+tags: [Trie, Strings]
+signature:
+  function: countByPrefix
+  params:
+    - { name: titles, type: 'string[]' }
+    - { name: prefixes, type: 'string[]' }
+  returns: 'int[]'
+limits: { timeMs: 1000, memoryMb: 256 }
+constraints:
+  - '1 ≤ titles.length, prefixes.length ≤ 2·10⁴'
+  - '1 ≤ titles[i].length, prefixes[j].length ≤ 50'
+  - Titles and prefixes contain lowercase English letters only.
+  - The same title may appear more than once; each copy counts.
+examples:
+  - args: { titles: [crown, crowd, crow, castle, crown], prefixes: [crow, c, crowns, ca] }
+    output: [4, 5, 0, 1]
+    explanation: '"crow" begins crown, crowd, crow and the second crown.'
+hints:
+  - text: Comparing every prefix with every title is up to 4·10⁸ comparisons. Can you share the work between titles that start the same way?
+    unlockAfterWrong: 2
+  - text: Insert every title into a trie and keep, at each node, how many titles pass through it. A prefix's answer is the count at the node where it ends (0 if it falls off).
+    unlockAfterWrong: 4
+license: CC-BY-SA-4.0
+source: Original KingCoda problem

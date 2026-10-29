@@ -1,0 +1,31 @@
+number: 19
+slug: granary-coin-change
+title: Granary Coin Change
+difficulty: Medium
+tags: [DP 1D]
+signature:
+  function: fewestCoins
+  params:
+    - { name: denominations, type: 'int[]' }
+    - { name: price, type: int }
+  returns: int
+limits: { timeMs: 1000, memoryMb: 256 }
+constraints:
+  - '1 ≤ denominations.length ≤ 12'
+  - '1 ≤ denominations[i] ≤ 10⁴'
+  - '0 ≤ price ≤ 10⁴'
+examples:
+  - args: { denominations: [1, 4, 6], price: 8 }
+    output: 2
+    explanation: 4 + 4 beats the greedy 6 + 1 + 1.
+  - args: { denominations: [5, 7], price: 3 }
+    output: -1
+  - args: { denominations: [3], price: 0 }
+    output: 0
+hints:
+  - text: Greedy (always take the biggest coin) fails on the first example. Think about the best way to pay every smaller amount first.
+    unlockAfterWrong: 2
+  - text: best[0] = 0 and best[x] = 1 + min(best[x − d]) over denominations d ≤ x. Fill x from 1 to price; unreachable amounts stay infinite.
+    unlockAfterWrong: 4
+license: CC-BY-SA-4.0
+source: Original KingCoda problem

@@ -1,0 +1,29 @@
+number: 21
+slug: crown-jewel-subsets
+title: Crown Jewel Subsets
+difficulty: Medium
+tags: [Backtracking, Bit Manipulation]
+signature:
+  function: allSettings
+  params:
+    - { name: jewels, type: 'int[]' }
+  returns: 'int[][]'
+checker: { kind: unordered }
+limits: { timeMs: 1000, memoryMb: 256 }
+constraints:
+  - '0 ≤ jewels.length ≤ 12'
+  - '-100 ≤ jewels[i] ≤ 100'
+  - All jewel values are distinct.
+examples:
+  - args: { jewels: [3, 1] }
+    output: [[], [1], [3], [1, 3]]
+    explanation: Each setting is listed smallest value first; the settings themselves can come in any order.
+  - args: { jewels: [] }
+    output: [[]]
+hints:
+  - text: Every jewel is either in a setting or not, so there are 2ⁿ settings.
+    unlockAfterWrong: 2
+  - text: Sort the jewels, then either backtrack (choose / skip each jewel) or loop over masks 0 … 2ⁿ − 1 and collect the jewels whose bits are set.
+    unlockAfterWrong: 4
+license: CC-BY-SA-4.0
+source: Original KingCoda problem

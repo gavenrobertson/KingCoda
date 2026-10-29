@@ -1,0 +1,29 @@
+number: 16
+slug: knights-depth
+title: "Knight's Depth"
+difficulty: Easy
+tags: [Trees, DFS]
+signature:
+  function: commandDepth
+  params:
+    - { name: root, type: TreeNode }
+  returns: int
+limits: { timeMs: 1000, memoryMb: 256 }
+constraints:
+  - 'The tree has between 0 and 10⁴ knights.'
+  - '-10⁵ ≤ knight id ≤ 10⁵'
+examples:
+  - args: { root: [1, 2, 3, null, null, 4, 5] }
+    output: 3
+    explanation: The longest chain of command is 1 → 3 → 4 (or 1 → 3 → 5), three knights deep.
+  - args: { root: [1, null, 2] }
+    output: 2
+  - args: { root: [] }
+    output: 0
+hints:
+  - text: The depth of a knight's command is one more than the deeper of their two sub-commands.
+    unlockAfterWrong: 2
+  - text: Recurse — depth(null) = 0 and depth(node) = 1 + max(depth(left), depth(right)). A level-by-level BFS that counts levels works too.
+    unlockAfterWrong: 4
+license: CC-BY-SA-4.0
+source: Original KingCoda problem

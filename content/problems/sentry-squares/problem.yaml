@@ -1,0 +1,27 @@
+number: 18
+slug: sentry-squares
+title: Sentry Squares
+difficulty: Easy
+tags: [Two Pointers, Arrays]
+signature:
+  function: squaredPositions
+  params:
+    - { name: positions, type: 'int[]' }
+  returns: 'int[]'
+limits: { timeMs: 1000, memoryMb: 256 }
+constraints:
+  - '1 ≤ positions.length ≤ 10⁵'
+  - '-10⁴ ≤ positions[i] ≤ 10⁴'
+  - positions is sorted in non-decreasing order.
+examples:
+  - args: { positions: [-4, -1, 0, 3, 10] }
+    output: [0, 1, 9, 16, 100]
+  - args: { positions: [-7, -3, 2, 3, 11] }
+    output: [4, 9, 9, 49, 121]
+hints:
+  - text: The largest square is always at one of the two ends of the sorted array.
+    unlockAfterWrong: 2
+  - text: Put pointers at both ends, take the side with the larger absolute value, and fill the answer from the back. That's O(n) with no sort.
+    unlockAfterWrong: 4
+license: CC-BY-SA-4.0
+source: Original KingCoda problem

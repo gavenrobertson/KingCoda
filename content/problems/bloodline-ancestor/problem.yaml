@@ -1,0 +1,30 @@
+number: 22
+slug: bloodline-ancestor
+title: Bloodline Ancestor
+difficulty: Medium
+tags: [Trees, Binary Search Tree]
+signature:
+  function: nearestCommonAncestor
+  params:
+    - { name: root, type: TreeNode }
+    - { name: a, type: int }
+    - { name: b, type: int }
+  returns: int
+limits: { timeMs: 1000, memoryMb: 256 }
+constraints:
+  - 'The tree has between 1 and 10⁵ nodes and is a binary search tree with distinct values.'
+  - '-10⁹ ≤ node value ≤ 10⁹'
+  - a and b are values of nodes in the tree (they may be equal).
+examples:
+  - args: { root: [6, 2, 8, 0, 4, 7, 9, null, null, 3, 5], a: 2, b: 8 }
+    output: 6
+  - args: { root: [6, 2, 8, 0, 4, 7, 9, null, null, 3, 5], a: 2, b: 4 }
+    output: 2
+    explanation: A member counts as their own ancestor.
+hints:
+  - text: In a binary search tree, comparing a value with a node tells you which side it lives on.
+    unlockAfterWrong: 2
+  - text: Walk down from the root. If both values are smaller go left, if both are larger go right; otherwise the current node is where their paths split.
+    unlockAfterWrong: 4
+license: CC-BY-SA-4.0
+source: Original KingCoda problem

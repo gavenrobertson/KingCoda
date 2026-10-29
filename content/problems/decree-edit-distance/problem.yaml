@@ -1,0 +1,32 @@
+number: 24
+slug: decree-edit-distance
+title: Decree Edit Distance
+difficulty: Hard
+tags: [DP 2D, Strings]
+signature:
+  function: fewestEdits
+  params:
+    - { name: draft, type: string }
+    - { name: approved, type: string }
+  returns: int
+limits: { timeMs: 1000, memoryMb: 256 }
+constraints:
+  - '0 ≤ draft.length, approved.length ≤ 2000'
+  - Both strings contain lowercase English letters only.
+examples:
+  - args: { draft: horse, approved: house }
+    output: 1
+    explanation: Replace the r with a u.
+  - args: { draft: crown, approved: crowned }
+    output: 2
+  - args: { draft: '', approved: abc }
+    output: 3
+hints:
+  - text: Think about the last letter of each word. Either they match, or one of the three edits fixed the end.
+    unlockAfterWrong: 2
+  - text: d[i][j] = edits to turn the first i letters of draft into the first j of approved. d[i][j] = d[i−1][j−1] if the letters match, else 1 + min(d[i−1][j], d[i][j−1], d[i−1][j−1]).
+    unlockAfterWrong: 4
+  - text: Each row only needs the previous one, so O(min(n, m)) memory is enough.
+    unlockAfterWrong: 6
+license: CC-BY-SA-4.0
+source: Original KingCoda problem

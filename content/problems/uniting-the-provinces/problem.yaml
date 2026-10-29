@@ -1,0 +1,29 @@
+number: 9
+slug: uniting-the-provinces
+title: Uniting the Provinces
+difficulty: Medium
+tags: [Union-Find, Graphs]
+signature:
+  function: kingdomsAfterEachRoad
+  params:
+    - { name: n, type: int }
+    - { name: roads, type: 'int[][]' }
+  returns: 'int[]'
+limits: { timeMs: 1000, memoryMb: 256 }
+constraints:
+  - '1 ≤ n ≤ 10⁵'
+  - '0 ≤ roads.length ≤ 10⁵'
+  - 'roads[i] = [a, b] with 0 ≤ a, b < n (a road may loop back to the same province)'
+examples:
+  - args: { n: 4, roads: [[0, 1], [2, 3], [1, 0], [1, 2]] }
+    output: [3, 2, 2, 1]
+    explanation: The third road joins provinces that are already one kingdom, so the count doesn't change.
+  - args: { n: 3, roads: [] }
+    output: []
+hints:
+  - text: You only ever join kingdoms, never split them. A structure that merges sets quickly is all you need.
+    unlockAfterWrong: 2
+  - text: Union-find with path compression and union by size. Start with n kingdoms and subtract one each time a road joins two different roots.
+    unlockAfterWrong: 4
+license: CC-BY-SA-4.0
+source: Original KingCoda problem

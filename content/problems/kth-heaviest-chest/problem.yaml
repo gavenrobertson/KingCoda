@@ -1,0 +1,28 @@
+number: 23
+slug: kth-heaviest-chest
+title: Kth Heaviest Chest
+difficulty: Medium
+tags: [Heaps, Sorting]
+signature:
+  function: kthHeaviest
+  params:
+    - { name: chests, type: 'int[]' }
+    - { name: k, type: int }
+  returns: int
+limits: { timeMs: 1000, memoryMb: 256 }
+constraints:
+  - '1 ≤ k ≤ chests.length ≤ 10⁵'
+  - '-10⁹ ≤ chests[i] ≤ 10⁹'
+examples:
+  - args: { chests: [3, 2, 1, 5, 6, 4], k: 2 }
+    output: 5
+  - args: { chests: [3, 2, 3, 1, 2, 4, 5, 5, 6], k: 4 }
+    output: 4
+    explanation: Sorted heaviest first the weights are 6, 5, 5, 4, … — equal weights each take their own place.
+hints:
+  - text: You don't need the whole list sorted, only the k heaviest.
+    unlockAfterWrong: 2
+  - text: Keep a min-heap of size k while scanning; its top is the answer. O(n log k). Quickselect gets O(n) on average.
+    unlockAfterWrong: 4
+license: CC-BY-SA-4.0
+source: Original KingCoda problem

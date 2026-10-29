@@ -1,0 +1,28 @@
+number: 25
+slug: longest-rising-banner
+title: Longest Rising Banner
+difficulty: Hard
+tags: [DP 1D, Binary Search]
+signature:
+  function: longestRise
+  params:
+    - { name: heights, type: 'int[]' }
+  returns: int
+limits: { timeMs: 1000, memoryMb: 256 }
+constraints:
+  - '1 ≤ heights.length ≤ 10⁵'
+  - '-10⁹ ≤ heights[i] ≤ 10⁹'
+examples:
+  - args: { heights: [10, 9, 2, 5, 3, 7, 101, 18] }
+    output: 4
+    explanation: For example 2, 3, 7, 18 (or 2, 5, 7, 101).
+  - args: { heights: [7, 7, 7] }
+    output: 1
+    explanation: Each pole must be strictly taller than the one before it.
+hints:
+  - text: The O(n²) DP (best rise ending at each pole) is too slow for 10⁵ poles.
+    unlockAfterWrong: 2
+  - text: Keep tails[len] = the smallest possible last height of a rise of length len + 1. Each new height replaces the first tail ≥ it (binary search) or extends the list.
+    unlockAfterWrong: 4
+license: CC-BY-SA-4.0
+source: Original KingCoda problem

@@ -1,0 +1,1 @@
+The treasury's strongroom holds treasure chests with the given weights in `chests`. The steward wants to know the weight of the **k-th heaviest** chest: sort the weights from heaviest to lightest (chests of equal weight each take their own place) and take the `k`-th one.

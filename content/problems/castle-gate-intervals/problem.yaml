@@ -1,0 +1,28 @@
+number: 4
+slug: castle-gate-intervals
+title: Castle Gate Intervals
+difficulty: Medium
+tags: [Intervals, Sorting]
+signature:
+  function: openStretches
+  params:
+    - { name: openings, type: 'int[][]' }
+  returns: 'int[][]'
+limits: { timeMs: 1000, memoryMb: 256 }
+constraints:
+  - '1 ≤ openings.length ≤ 10⁵'
+  - 'openings[i] = [start, end] with 0 ≤ start ≤ end ≤ 10⁹'
+examples:
+  - args: { openings: [[1, 4], [8, 10], [2, 6], [15, 18]] }
+    output: [[1, 6], [8, 10], [15, 18]]
+    explanation: '[1,4] and [2,6] overlap, so the gate is open for the whole of [1,6].'
+  - args: { openings: [[5, 7], [7, 9]] }
+    output: [[5, 9]]
+    explanation: Openings that touch end-to-start join into one stretch.
+hints:
+  - text: If the openings were in order of start time, each one either extends the current stretch or begins a new one.
+    unlockAfterWrong: 2
+  - text: Sort by start. Keep the current [start, end]; if the next start ≤ end, set end = max(end, next end), otherwise push the stretch and start a new one.
+    unlockAfterWrong: 4
+license: CC-BY-SA-4.0
+source: Original KingCoda problem
