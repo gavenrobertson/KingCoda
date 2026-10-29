@@ -260,7 +260,9 @@ The trade-off is a cold start of a few seconds on the first Run of a session; ev
 
 **If it ever grows** (friends, public launch): set the warm floor to 1–2 boxes for instant first runs (≈ $20/mo per always-warm box) and add contest scale-up. It's a config change, not a redesign.
 
-### 5.7 Phase 1 judge spike (go/no-go)
+### 5.7 Phase 1 judge spike (passed)
+
+Result: **go**. 32/32 hostile probes contained on a deployed Cloudflare Container; details and the design changes it forced are in the [spike report](./spike/judge-spike.md). The original plan follows for reference.
 
 Before the judge is built, a throwaway spike checks these on a **deployed** container:
 

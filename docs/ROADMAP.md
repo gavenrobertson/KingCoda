@@ -18,10 +18,10 @@ _Needs from you before deploy: Cloudflare account ID + API token (D9). D3 is con
 - [x] `packages/db`: Drizzle schema for identity, problems, submissions, game, contests and community; init migration; CI drift check. _Seed data arrives with the 25 problems in Phase 2._
 - [x] Auth: Better Auth with GitHub and Google OAuth (no email provider, per D5); handle onboarding; roles column.
 - [x] Wrangler environments (local / e2e / staging / production) for D1, KV, R2. _Queues and Durable Objects are added with the judge in Phase 2._
-- [~] **Judge spike**: local stage done (30/30 hostile probes, timing CV < 1%, 5 bugs found and fixed). The deployed-Container run is waiting on the Cloudflare account. See [spike report](./spike/judge-spike.md).
+- [x] **Judge spike**: 32/32 hostile probes contained on a deployed Cloudflare Container (namespace jail + cgroups + seccomp; 6 issues found and fixed). D3 confirmed. See [spike report](./spike/judge-spike.md).
 - [x] ADRs recorded for D1–D4 ([`docs/adr/`](./adr/)).
 
-**Exit**: sign in with GitHub on staging, see an empty-state problems page in the KingCoda shell, CI green, and spike report delivered. _Status: met locally; staging deploy and the deployed spike run need the Cloudflare account (D9)._
+**Exit**: sign in with GitHub on staging, see an empty-state problems page in the KingCoda shell, CI green, and spike report delivered. _Status: met. Production is live at kingcoda-web.gaven-robertson.workers.dev; GitHub sign-in needs an OAuth app (pending from you)._
 
 ## Phase 2 — Browse, solve, judge (C++, 25 problems)
 
@@ -33,7 +33,7 @@ _Needs: D3 confirmed by the spike_
 - [ ] UserHub DO: WebSocket push of verdicts, with polling fallback.
 - [ ] Problem browser: search (FTS5), difficulty/topic/status/track filters, keyset pagination, "Pick one for me", progress sidebar, designed empty and error states.
 - [ ] Workspace: resizable split, Markdown + KaTeX statement, examples, constraints, Monaco, language picker, starter code, per-language autosave, custom input, Run vs. Submit, shortcuts, test console, verdict panel with sample-test diff, mobile "bigger screen" card.
-- [ ] 25 hand-written seed problems (mixed topics and difficulties) in the package format, validated by an early version of the pipeline.
+- [x] 25 hand-written seed problems (9 Easy, 11 Medium, 5 Hard) in the package format, validated by pipeline v0.
 - [ ] Rate limiting on run/submit.
 
 **Exit**: on staging, a user can find a problem, fail it, read the diff, fix it and get Accepted in Python, JS or C++. The hostile suite passes on a deployed box.
