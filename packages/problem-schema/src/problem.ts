@@ -86,7 +86,7 @@ export const problemSchema = z
     difficulty: z.enum(DIFFICULTIES),
     tags: z.array(z.string().min(2)).min(1).max(5),
     signature: signatureSchema,
-    /** Total CPU time for the whole hidden suite in C++; other languages get a multiplier. */
+    /** CPU time per test process in C++ (see judge-core groupCases); other languages get a multiplier. */
     limits: z
       .object({
         timeMs: z.number().int().min(200).max(10000),

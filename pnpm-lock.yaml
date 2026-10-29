@@ -36,6 +36,37 @@ importers:
         specifier: ^8.72.1
         version: 8.72.1(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3)
 
+  apps/judge:
+    dependencies:
+      '@kingcoda/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@kingcoda/judge-core':
+        specifier: workspace:*
+        version: link:../../packages/judge-core
+      '@kingcoda/problem-schema':
+        specifier: workspace:*
+        version: link:../../packages/problem-schema
+      drizzle-orm:
+        specifier: ^0.45.4
+        version: 0.45.4(@cloudflare/workers-types@5.20261029.1)(@types/better-sqlite3@9.6.0)(better-sqlite3@13.0.3)(kysely@0.29.7)
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^5.20261029.1
+        version: 5.20261029.1
+      '@types/node':
+        specifier: ^22.20.5
+        version: 22.20.5
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^5.0.5
+        version: 5.0.5(@types/node@22.20.5)(vite@8.3.5(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.36.0)(tsx@4.23.15)(yaml@2.9.1))
+      wrangler:
+        specifier: ^4.155.0
+        version: 4.155.0(@cloudflare/workers-types@5.20261029.1)(@types/node@22.20.5)
+
   apps/web:
     dependencies:
       '@fontsource-variable/bricolage-grotesque':
@@ -242,9 +273,15 @@ importers:
         specifier: ^2.9.1
         version: 2.9.1
     devDependencies:
+      '@types/better-sqlite3':
+        specifier: ^9.6.0
+        version: 9.6.0
       '@types/node':
         specifier: ^22.20.5
         version: 22.20.5
+      better-sqlite3:
+        specifier: ^13.0.3
+        version: 13.0.3
       typescript:
         specifier: 5.9.3
         version: 5.9.3

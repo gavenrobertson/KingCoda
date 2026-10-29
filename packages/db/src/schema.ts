@@ -25,7 +25,8 @@ const updatedAt = () =>
 export const LANGUAGES = ['python', 'javascript', 'typescript', 'java', 'cpp', 'go'] as const;
 export type Language = (typeof LANGUAGES)[number];
 export const DIFFICULTIES = ['Easy', 'Medium', 'Hard'] as const;
-export const VERDICTS = ['AC', 'WA', 'TLE', 'MLE', 'RE', 'CE', 'IE'] as const;
+export const VERDICTS = ['AC', 'WA', 'TLE', 'MLE', 'OLE', 'RE', 'CE', 'IE'] as const;
+export type VerdictCode = (typeof VERDICTS)[number];
 
 // ───────────────────────────── Identity (Better Auth core tables) ─────────────────────────────
 
@@ -382,13 +383,11 @@ export const contest = sqliteTable(
   (t) => [index('contest_starts_idx').on(t.startsAt)],
 );
 
-export interface FailCase {
-  index: number;
-  input: string;
-  expected: string;
-  actual: string;
-  category?: string;
-}
+/**
+ * The judge's verdict detail (packages/judge-core `Verdict`). Holds data from public cases only
+ * (examples and custom input); a hidden failure is its position, edge-case label and a fixed message.
+ */
+export type SubmissionReport = Record<string, unknown>;
 
 export const submission = sqliteTable(
   'submission',
@@ -415,9 +414,8 @@ export const submission = sqliteTable(
     codeR2Key: text('code_r2_key').notNull(),
     codeHash: text('code_hash').notNull(),
     codeBytes: integer('code_bytes').notNull(),
-    /** Only ever holds a SAMPLE test. Hidden test data is never stored here. */
-    failCase: text('fail_case', { mode: 'json' }).$type<FailCase>(),
-    failCategory: text('fail_category'),
+    /** Hidden test data is never stored here. */
+    report: text('report', { mode: 'json' }).$type<SubmissionReport>(),
     compileLog: text('compile_log'),
     createdAt: createdAt(),
     judgedAt: integer('judged_at', { mode: 'timestamp_ms' }),

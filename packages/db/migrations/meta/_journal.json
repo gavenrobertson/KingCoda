@@ -8,6 +8,27 @@
       "when": 1793283738827,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1793295352005,
+      "tag": "0001_drop_fail_case",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793295352637,
+      "tag": "0002_submission_report",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1793295361451,
+      "tag": "0003_problem_search",
+      "breakpoints": true
     }
   ]
 }

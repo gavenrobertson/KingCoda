@@ -1,0 +1,1 @@
+ALTER TABLE `submission` ADD `report` text;

@@ -1,16 +1,25 @@
 #!/usr/bin/env node
-// kc-pipeline validate [slug...]   check packages (fails on the first broken check per package)
-// kc-pipeline build [slug...]      validate, then write content/build/<slug>/ for publishing
+// kc-pipeline validate [slug...]           check packages (fails on the first broken check per package)
+// kc-pipeline build [slug...]              validate, then write content/build/<slug>/ for publishing
+// kc-pipeline publish <env> [slug...]      upload built problems to D1 + R2 (env: local, e2e, production)
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { canonical } from '@kingcoda/problem-schema';
 import { starterCode } from '@kingcoda/harness';
 import { BUILD_DIR, packageDirs } from './load.ts';
+import { publish } from './publish-cli.ts';
 import { validatePackage, type BuiltProblem } from './validate.ts';
 
-const [command, ...slugs] = process.argv.slice(2);
+const [command, ...rest] = process.argv.slice(2);
+if (command === 'publish') {
+  const [env, ...only] = rest;
+  process.exit(await publish(env, only));
+}
+const slugs = rest;
 if (command !== 'validate' && command !== 'build') {
-  console.error('usage: kc-pipeline validate|build [slug...]');
+  console.error(
+    'usage: kc-pipeline validate|build [slug...] | publish <local|e2e|production> [slug...]',
+  );
   process.exit(2);
 }
 
@@ -28,7 +37,9 @@ function writeBuild(b: BuiltProblem) {
       {
         ...meta,
         statement,
+        // C++ is the only judged language until Phase 3.
         starterCode: { cpp: starterCode(meta.signature, 'cpp') },
+        referenceSolutions: { cpp: b.pkg.reference },
         counts: { sample: b.samples.length, hidden: b.hidden.length },
       },
       null,

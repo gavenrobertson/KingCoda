@@ -1,0 +1,101 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  // The judge: queue consumer, the JudgeBox Durable Object that owns the sandbox container, and an
+  // RPC entrypoint the web Worker calls through a service binding (ARCHITECTURE §5.2).
+  "name": "kingcoda-judge",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-13",
+  "observability": { "enabled": true },
+  // Local dev: no container. Jobs go to a judge box you run with Docker (judge/README.md), and
+  // state is shared with the web app's emulated bindings (`pnpm dev` persists to apps/web).
+  "vars": { "APP_ENV": "local", "JUDGE_BOX_URL": "http://localhost:18080" },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "kingcoda-local",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "../../packages/db/migrations",
+    },
+  ],
+  "r2_buckets": [
+    { "binding": "CODE", "bucket_name": "kingcoda-code-local" },
+    { "binding": "TESTS", "bucket_name": "kingcoda-tests-local" },
+  ],
+  "queues": {
+    "producers": [{ "binding": "JOBS", "queue": "judge-jobs-local" }],
+    // One message per batch: a submission is judged as soon as it is queued. One consumer at a
+    // time keeps a user's verdicts in order and matches the single box.
+    "consumers": [
+      { "queue": "judge-jobs-local", "max_batch_size": 1, "max_concurrency": 1, "max_retries": 3 },
+    ],
+  },
+  "env": {
+    "e2e": {
+      "vars": { "APP_ENV": "local", "JUDGE_BOX_URL": "http://localhost:18080" },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "kingcoda-e2e",
+          "database_id": "00000000-0000-0000-0000-0000000000e2",
+          "migrations_dir": "../../packages/db/migrations",
+        },
+      ],
+      "r2_buckets": [
+        { "binding": "CODE", "bucket_name": "kingcoda-code-e2e" },
+        { "binding": "TESTS", "bucket_name": "kingcoda-tests-e2e" },
+      ],
+      "queues": {
+        "producers": [{ "binding": "JOBS", "queue": "judge-jobs-e2e" }],
+        "consumers": [
+          {
+            "queue": "judge-jobs-e2e",
+            "max_batch_size": 1,
+            "max_concurrency": 1,
+            "max_retries": 3,
+          },
+        ],
+      },
+    },
+    "production": {
+      "name": "kingcoda-judge",
+      "vars": { "APP_ENV": "production" },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "kingcoda",
+          "database_id": "eb5a699b-562a-4750-83f9-9b63d9d95eec",
+          "migrations_dir": "../../packages/db/migrations",
+        },
+      ],
+      "r2_buckets": [
+        { "binding": "CODE", "bucket_name": "kingcoda-code" },
+        // Hidden tests: only the judge has this binding (ARCHITECTURE §9).
+        { "binding": "TESTS", "bucket_name": "kingcoda-tests" },
+      ],
+      "queues": {
+        "producers": [{ "binding": "JOBS", "queue": "judge-jobs" }],
+        "consumers": [
+          {
+            "queue": "judge-jobs",
+            "max_batch_size": 1,
+            "max_concurrency": 1,
+            "max_retries": 3,
+            "dead_letter_queue": "judge-jobs-dlq",
+          },
+        ],
+      },
+      // New accounts only get the durable_object scheduling policy: JudgeBox starts the container.
+      "containers": [
+        {
+          "class_name": "JudgeBox",
+          "scheduling_policy": "durable_object",
+          "images": {
+            "base": { "dockerfile": "../../judge/Dockerfile", "build_context": "../../judge" },
+          },
+        },
+      ],
+      "durable_objects": { "bindings": [{ "name": "JUDGE_BOX", "class_name": "JudgeBox" }] },
+      "exports": { "JudgeBox": { "type": "durable-object", "storage": "sqlite" } },
+    },
+  },
+}

@@ -1,0 +1,26 @@
+{
+  "name": "@kingcoda/judge",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --persist-to ../web/.wrangler/state",
+    "deploy": "wrangler deploy --env production",
+    "cf-typegen": "wrangler types --env-interface JudgeEnv worker-env.d.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@kingcoda/db": "workspace:*",
+    "@kingcoda/judge-core": "workspace:*",
+    "@kingcoda/problem-schema": "workspace:*",
+    "drizzle-orm": "^0.45.4"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261029.1",
+    "@types/node": "^22.20.5",
+    "typescript": "5.9.3",
+    "vitest": "^5.0.5",
+    "wrangler": "^4.155.0"
+  }
+}

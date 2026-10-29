@@ -1,0 +1,17 @@
+{
+  // Bindings for the judge-flow tests (Miniflare, in memory). No queue or container: tests call
+  // judgeSubmission directly with a local stand-in for the box.
+  "name": "kingcoda-judge-test",
+  "compatibility_date": "2026-10-13",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "test",
+      "database_id": "00000000-0000-0000-0000-00000000test",
+    },
+  ],
+  "r2_buckets": [
+    { "binding": "CODE", "bucket_name": "code-test" },
+    { "binding": "TESTS", "bucket_name": "tests-test" },
+  ],
+}
