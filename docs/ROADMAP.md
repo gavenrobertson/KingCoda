@@ -1,6 +1,6 @@
 # KingCoda — Roadmap
 
-Status: **Draft for sign-off** · Last updated 2026-10-29 · Architecture: [`ARCHITECTURE.md`](./ARCHITECTURE.md) · Design: [`DESIGN.md`](./DESIGN.md)
+Status: **Approved 2026-10-29** (all recommendations D1–D9 accepted; personal-use cost profile) · Last updated 2026-10-29 · Architecture: [`ARCHITECTURE.md`](./ARCHITECTURE.md) · Design: [`DESIGN.md`](./DESIGN.md)
 
 Every phase ends with: full test suite green, a deployed staging build, and a report of **done / deferred / decisions needed**. Each phase lands as a series of working commits on the development branch. Nothing is left half-wired between commits.
 
@@ -9,13 +9,13 @@ Decision IDs (D1–D9) refer to [ARCHITECTURE §13](./ARCHITECTURE.md#13-decisio
 ---
 
 ## Phase 1 — Foundations
-*Blocked on: D1, D2, D4, D9 (D3 is decided by the spike in this phase)*
+*Needs from you before deploy: Cloudflare account ID + API token (D9). D3 is confirmed by the spike in this phase.*
 
 - [ ] Monorepo scaffold: pnpm, Turborepo, TypeScript strict, ESLint, Prettier, Vitest, Playwright, GitHub Actions CI.
 - [ ] `packages/ui`: Night Court tokens (dark + derived light), fonts, Tailwind v4 theme, shadcn/ui primitives restyled; contrast-check script in CI.
 - [ ] `apps/web` on Workers via OpenNext: app shell (header with gold chip, streak flame, XP bar, avatar), theme toggle, 404/500 states.
 - [ ] `packages/db`: Drizzle schema for identity, problems, submissions, game tables; migrations; local D1 seed.
-- [ ] Auth: Better Auth with GitHub, Google and email magic link; profile creation with a handle picker; roles.
+- [ ] Auth: Better Auth with GitHub and Google OAuth (no email provider, per D5); profile creation with a handle picker; roles.
 - [ ] Wrangler environments (local / staging / production) for D1, KV, R2, Queues, DOs.
 - [ ] **Judge spike** on a deployed Container (go/no-go checklist in ARCHITECTURE §5.7). Write up findings and settle **D3**.
 - [ ] ADRs recorded for D1–D4.
@@ -23,7 +23,7 @@ Decision IDs (D1–D9) refer to [ARCHITECTURE §13](./ARCHITECTURE.md#13-decisio
 **Exit**: sign in with GitHub on staging, see an empty-state problems page in the KingCoda shell, CI green, and spike report delivered.
 
 ## Phase 2 — Browse, solve, judge (3 languages, 25 problems)
-*Blocked on: D3*
+*Needs: D3 confirmed by the spike*
 
 - [ ] `packages/problem-schema` + `packages/harness` for Python, JavaScript and C++ (types: scalars, arrays, 2D arrays, strings, ListNode, TreeNode).
 - [ ] `judge-image` + `kc-run`: compile/run, rlimits, seccomp, output caps, rusage; hostile-code test suite.
@@ -41,7 +41,7 @@ Decision IDs (D1–D9) refer to [ARCHITECTURE §13](./ARCHITECTURE.md#13-decisio
 - [ ] Harness for TypeScript, Java and Go; design-problem (`kind: design`) support.
 - [ ] `tools/pipeline validate` with all 10 checks (ARCHITECTURE §6.4), including the brute-force-must-TLE complexity gate and per-language limit calibration.
 - [ ] Near-duplicate detector (MinHash + structural fingerprint).
-- [ ] `tools/pipeline generate` via the Claude API (if D6 approved), with drafts → review PR → publish.
+- [ ] Drafting workflow in Claude Code sessions (D6) with drafts → review PR → publish; optional Claude API bulk mode.
 - [ ] `tools/pipeline publish` in CI → R2 test sets + versioned D1 content.
 - [ ] Editorials for every problem: intuition → brute force → optimal → complexity, plus reference solutions in all 6 languages; locked until solve or reveal (reveals tracked).
 - [ ] Runtime/memory percentiles + distribution chart.
@@ -50,14 +50,14 @@ Decision IDs (D1–D9) refer to [ARCHITECTURE §13](./ARCHITECTURE.md#13-decisio
 **Exit**: `pipeline validate --all` green on 150 problems × 6 languages in CI.
 
 ## Phase 4 — Profiles, XP, streaks, badges, reward moments
-*Blocked on: D7 (Store scope)*
+*Store included (D7 approved)*
 
 - [ ] `packages/game`: ledger, XP/levels, points, gold, first-try bonus, streaks with time zones and freezes, badge rules — exhaustively unit-tested.
 - [ ] Accepted moment: particle burst (skippable), XP tick-up with gold-flash segment, Beats-X% cards, personal-best callouts, optional sound, full reduced-motion path.
 - [ ] WA/TLE/MLE/RE/CE tones; tiered hint unlocks after N failed attempts.
 - [ ] Badge unlock toasts; badge gallery with locked silhouettes and progress.
 - [ ] Profile page: solved donut by difficulty, heatmap, streak and personal bests, language breakdown, badges, recent activity, rating.
-- [ ] Store (if D7): catalogue from the canvas, buy/equip, editor themes in Monaco, avatar frames, banners, celebration effects, flames, titles, streak freeze.
+- [ ] Store: catalogue from the canvas, buy/equip, editor themes in Monaco, avatar frames, banners, celebration effects, flames, titles, streak freeze.
 
 **Exit**: Playwright "solve → celebrate → badge → profile updates" journey green, with reduced-motion snapshot.
 

@@ -1,10 +1,10 @@
 # KingCoda — Architecture
 
-Status: **Draft for sign-off** · Last updated 2026-10-29
+Status: **Approved 2026-10-29** · Last updated 2026-10-29
 
 KingCoda is a competitive-programming practice platform: LeetCode's structure, Duolingo's motivation loop, Linear's polish. This document covers the system design, data model, judge, content pipeline, reward loop and security model. The phased plan is in [`ROADMAP.md`](./ROADMAP.md). The visual language (the "Night Court" palette from the KingCoda design canvas) is in [`DESIGN.md`](./DESIGN.md).
 
-Decisions marked **⚑ DECISION** are expensive to reverse. Each needs your sign-off before the phase that depends on it starts. The full list is in [§13](#13-decisions-needed-from-you).
+Decisions marked **⚑ DECISION** are expensive to reverse. All recommendations in [§13](#13-decisions-needed-from-you) were approved on 2026-10-29.
 
 ---
 
@@ -33,7 +33,7 @@ Decisions marked **⚑ DECISION** are expensive to reverse. Each needs your sign
                     │                                                                       │
  Browser ──HTTPS──▶ │  web  (Worker: Next.js App Router via OpenNext)                       │
   Monaco            │   ├─ RSC pages, route handlers, server actions                        │
-  Framer Motion     │   ├─ Better Auth (GitHub, Google, email magic link)                   │
+  Framer Motion     │   ├─ Better Auth (GitHub, Google OAuth)                               │
   WebSocket ◀──────▶│   ├─ Rate Limiting binding (per-user / per-IP)                         │
                     │   ├─ D1  (primary relational DB, Drizzle ORM)                          │
                     │   ├─ KV  (hot read caches: problem list pages, leaderboard pages)      │
@@ -202,7 +202,7 @@ Source code goes to R2 (`subm/{yyyy}/{mm}/{id}`), not D1. That keeps D1 well und
 ### 5.2 Flow
 
 1. **web** `POST /api/submissions` → auth → rate limit (Rate Limiting binding: 6 submits/min and 20 runs/min per user; stricter for new accounts) → code stored in R2 → `submission` row (`queued`) → message to `judge-jobs` (or `judge-jobs-contest` during contests, which has its own reserved boxes).
-2. **judge** queue consumer → `JudgePool` DO picks an idle `JudgeBox` (or cold-starts one). The pool keeps a configurable warm floor: 2 boxes off-peak, more during contests, with a scheduled scale-up 10 minutes before start.
+2. **judge** queue consumer → `JudgePool` DO picks an idle `JudgeBox` (or cold-starts one). The pool has a configurable warm floor: 0 by default (scale to zero; opening a problem pre-warms a box), raised for contests or more users (§5.6).
 3. The box's **kc-run** receives `{lang, source, harness, limits, inputs[]}` over the container's local HTTP port.
    - It **compiles** (if needed) as uid 2000 with its own limits (10 s CPU, 1 GiB) → CE with a truncated log.
    - It **runs** each test as uid 2000: fork → `setsid` → rlimits → `PR_SET_NO_NEW_PRIVS` → seccomp → `setuid` → `execve`. It measures CPU time and max RSS via `wait4` rusage. The parent is trusted root, so user code cannot forge the timings.
@@ -252,7 +252,11 @@ On each Accepted, `perf_histogram` increments the bucket for (problem, lang, met
 
 ### 5.6 Cost sketch (Workers Paid plan, $5/mo base)
 
-A warm box with 1 vCPU and 3 GiB costs ≈ $0.027/h for memory, ≈ $20/mo per always-warm box, plus active CPU at $0.00002/vCPU-s. A typical job uses ~0.3 vCPU-s, so 100k judged submissions/month ≈ $0.60 of CPU. **Expected judge cost at launch is ≈ $40–60/mo** (2 warm boxes plus burst). Contest scale-up adds roughly $1 per contest-hour per 10 extra boxes.
+**Personal use (the default config).** The warm floor is **0**: a box starts on your first Run, stays up while you work and sleeps after 10 minutes idle. You pay only while it's awake. The $5 plan includes 25 GiB-hours of memory, 375 vCPU-minutes and 200 GB-hours of disk each month. One hour of practice a day keeps a 1 vCPU / 3 GiB box awake about 40 h a month: about $0.30 of extra memory, disk within the included amount and CPU well inside it. **Expected total: about $5–6/mo.** D1, KV, R2 and Queues stay inside their included tiers at this scale.
+
+The trade-off is a cold start of a few seconds on the first Run of a session; every Run after that is fast. The pool opens the box in the background when you open a problem, so most of the time the box is ready before you press Run.
+
+**If it ever grows** (friends, public launch): set the warm floor to 1–2 boxes for instant first runs (≈ $20/mo per always-warm box) and add contest scale-up. It's a config change, not a redesign.
 
 ### 5.7 Phase 1 judge spike (go/no-go)
 
@@ -297,7 +301,7 @@ All KingCoda problems are **original**. Statements and editorials are **CC BY-SA
 - Covers a matrix of 22 topics × 3 difficulties with target mix **35% Easy / 45% Medium / 20% Hard**.
 - Uses the **Claude API** to draft complete packages (statement, signature, hints, editorial, solutions in all languages, brute force, generator). The prompt carries the schema, the style guide and the list of existing titles and concepts, which steers it away from duplicates.
 - Drafts land in `content/drafts/` and must pass validation **and** a human review (a PR per batch) before moving to `content/problems/`.
-- Needs an Anthropic API key and has a per-batch cost (**⚑ DECISION D6**). Without one, the pipeline still validates hand-written packages.
+- **Default: no API bill.** Drafts are written in Claude Code sessions (like this one) on your existing subscription; the pipeline only validates and publishes them. An optional `--api` mode calls the Claude API for unattended bulk batches, which needs an API key and is billed per token (**⚑ DECISION D6**).
 
 ### 6.4 Validation (the build fails if any step fails)
 
@@ -427,8 +431,8 @@ Workers Logs + Traces enabled. Workers Analytics Engine records judge latency, q
 | **D2** | Next.js on Workers adapter | **OpenNext** (runs real Next.js, mature) | vinext (Cloudflare's new default, beta); React Router v7 (GA on Workers, not Next.js) |
 | **D3** | Judge architecture | **Cloudflare Containers + custom `kc-run`**, gated by the Phase 1 spike | One-VM-per-submission on Containers (stricter, slower, pricier); self-hosted Judge0 on a VPS (proven, not on Cloudflare) |
 | **D4** | Auth library | **Better Auth** | Auth.js v5 (your brief; now maintenance-mode under Better Auth) |
-| **D5** | Email for magic links | **Cloudflare Email Service** if it's enabled on your account, else **Resend** | Postmark, SES |
-| **D6** | AI-assisted problem drafting | **Claude API** drafts packages, humans review every batch | Hand-authoring only (slower; Phase 8 at 1,000+ becomes impractical) |
+| **D5** | Sign-in methods | **GitHub (+ Google) OAuth only** for personal use; no email provider needed | Add email magic links later (Cloudflare Email Service or Resend) |
+| **D6** | AI-assisted problem drafting | **Drafted in Claude Code sessions** (no API bill), reviewed per batch | Claude API bulk mode (per-token cost); hand-authoring only |
 | **D7** | Store and gold economy from the design canvas | **Include** (cosmetic only; never affects score or rank) in Phase 4–5 | Defer to after Phase 7 |
 | **D8** | Content licence | **CC BY-SA 4.0** for text, **MIT** for code | CC BY 4.0; all rights reserved |
-| **D9** | Cloudflare account, domain, plan | Workers Paid ($5/mo) is required for Containers. Need: account ID, a domain (kingcoda.dev?), API token for CI | — |
+| **D9** | Cloudflare account, domain, plan | Workers Paid ($5/mo) is required for Containers; that is roughly the whole bill for personal use (§5.6). Need: account ID and an API token for CI. A custom domain is optional; the free `*.workers.dev` URL works | — |
