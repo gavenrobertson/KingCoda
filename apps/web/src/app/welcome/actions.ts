@@ -29,12 +29,20 @@ export async function createProfile(_prev: WelcomeState, form: FormData): Promis
     .limit(1);
   if (taken.length) return { error: `@${parsed.data} is taken. Try another.` };
 
-  await db.insert(profile).values({
-    userId: viewer.user.id,
-    handle: parsed.data,
-    displayName: viewer.user.name || parsed.data,
-    tz,
-  });
+  try {
+    await db.insert(profile).values({
+      userId: viewer.user.id,
+      handle: parsed.data,
+      displayName: viewer.user.name || parsed.data,
+      tz,
+    });
+  } catch (e) {
+    // Someone claimed the handle between the check above and this insert.
+    if (/UNIQUE constraint failed: profile\.handle/.test(String((e as Error).cause ?? e))) {
+      return { error: `@${parsed.data} is taken. Try another.` };
+    }
+    throw e;
+  }
   // The header (root layout) shows profile data; layouts survive soft navigation unless revalidated.
   revalidatePath('/', 'layout');
   redirect('/problems');
