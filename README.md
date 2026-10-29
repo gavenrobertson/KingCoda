@@ -8,13 +8,13 @@ A competitive programming practice platform where solving a problem feels like w
 
 ## Layout
 
-| Path              | What                                                                        |
-| ----------------- | --------------------------------------------------------------------------- |
-| `apps/web`        | Next.js App Router on Cloudflare Workers (OpenNext), Better Auth            |
-| `packages/ui`     | Design tokens (single source in `src/tokens.ts`), theme CSS, UI components  |
-| `packages/db`     | Drizzle schema for D1 and its SQL migrations                                |
-| `packages/game`   | Pure reward-loop rules (levels so far; XP, streaks and badges in Phase 4)   |
-| `judge-spike`     | Phase 1 judge sandbox prototype (`kc-run`) and its hostile-code test suite  |
+| Path            | What                                                                       |
+| --------------- | -------------------------------------------------------------------------- |
+| `apps/web`      | Next.js App Router on Cloudflare Workers (OpenNext), Better Auth           |
+| `packages/ui`   | Design tokens (single source in `src/tokens.ts`), theme CSS, UI components |
+| `packages/db`   | Drizzle schema for D1 and its SQL migrations                               |
+| `packages/game` | Pure reward-loop rules (levels so far; XP, streaks and badges in Phase 4)  |
+| `judge-spike`   | Phase 1 judge sandbox prototype (`kc-run`) and its hostile-code test suite |
 
 ## Local development
 

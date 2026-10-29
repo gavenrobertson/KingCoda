@@ -65,3 +65,33 @@ jobs:
           name: playwright-report
           path: apps/web/playwright-report
           retention-days: 7
+
+  judge-spike:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache-dependency-path: judge-spike/kc-run/go.mod
+      - name: kc-run vet + unit tests
+        working-directory: judge-spike/kc-run
+        run: |
+          test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
+          go vet ./...
+          go test ./...
+      - name: Build judge image
+        run: docker build -t kingcoda-judge-spike judge-spike
+      - name: Start judge box
+        run: |
+          docker run -d --name kcjudge -p 18080:8080 --memory 3g --cpus 1 kingcoda-judge-spike
+          for i in $(seq 1 30); do curl -fs localhost:18080/healthz && break; sleep 1; done
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Hostile-code probe suite
+        run: node judge-spike/probes/run.ts http://localhost:18080
+      - name: Box logs
+        if: failure()
+        run: docker logs kcjudge

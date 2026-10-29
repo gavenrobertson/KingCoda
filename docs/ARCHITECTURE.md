@@ -84,9 +84,10 @@ packages/
   harness/             Per-language harness generators from typed signatures
   game/                Pure functions: XP, levels, points, gold, streaks, badges, Elo (heavily unit-tested)
   judge-protocol/      Types shared by web ↔ judge ↔ kc-run (job, result, verdict)
-judge-image/
-  Dockerfile           Debian trixie + Python 3.13, Node 24, TS (swc), Java 21, g++ 14, Go 1.25
-  kc-run/              Trusted runner (Go): compile, run, rlimits, seccomp, rusage, output caps
+judge-image/            (Phase 2; grows from judge-spike/)
+  Dockerfile           Debian trixie + Python 3.13, Node 24, TS (swc), Java 21, g++ 14, Go 1.25, tini as PID 1
+  kc-run/              Trusted supervisor (Go): jobs over HTTP, timing, memory watch, output caps, cleanup
+  kc-exec/             Last trusted step (C): rlimits, drop to uid 2000, no-new-privs, seccomp, execve
 content/
   problems/<slug>/     One directory per problem (see §6)
   tracks/, plans/      Track and study-plan definitions (YAML)
@@ -97,12 +98,13 @@ docs/                  This file, ROADMAP.md, DESIGN.md, ADRs
 
 ### 2.3 Local development
 
-Docker Compose is replaced by the Cloudflare toolchain. It emulates every binding we use:
+Docker Compose is replaced by the Cloudflare toolchain, which emulates every binding we use (Miniflare: D1, KV, R2, Queues, DOs, Cron):
 
-- `pnpm dev` runs `wrangler dev` for **web** and **judge**. Miniflare emulates D1, KV, R2, Queues, DOs and Cron locally.
-- `wrangler dev` runs the **JudgeBox** container in local Docker from `judge-image/Dockerfile`.
-- `pnpm db:migrate:local` and `pnpm seed` load the problem bank into local D1/R2.
-- A `docker compose` file is kept only for running `tools/pipeline validate` against the judge image in CI and on machines without wrangler.
+- `pnpm dev` runs `next dev` for **web**; `initOpenNextCloudflareForDev()` gives it the real bindings from `wrangler.jsonc`.
+- **judge** runs under `wrangler dev`, which builds and runs the **JudgeBox** container in local Docker.
+- `pnpm --filter @kingcoda/web db:migrate:local` applies migrations to local D1; Phase 2 adds `pnpm seed` for the problem bank.
+- Playwright uses a separate `e2e` wrangler environment with throwaway state.
+- The judge image also runs standalone in Docker for the probe suite and, from Phase 3, `tools/pipeline validate`.
 
 **Known gap:** a local container is not identical to a deployed one. For example, the hostname differs and capabilities can differ. Security behaviour of the judge is therefore tested against a **deployed** staging box, not only locally.
 
@@ -189,15 +191,15 @@ Source code goes to R2 (`subm/{yyyy}/{mm}/{id}`), not D1. That keeps D1 well und
 
 ### 5.1 Requirements → mechanisms
 
-| Requirement                 | Mechanism                                                                                                                                                                                                                          |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Untrusted code can't escape | Each **JudgeBox is its own VM** (Cloudflare Container). Inside the VM, user code runs as uid 2000 with no capabilities (default scheduling policy; to be verified in the spike, §5.7) under a seccomp allowlist                    |
-| No network                  | `enableInternet = false`, no `allowedHosts` and no outbound handlers. DNS lookups time out                                                                                                                                         |
-| CPU / memory / time limits  | `setrlimit` RLIMIT_CPU (hard kill), RLIMIT_AS / maxrss check (MLE), RLIMIT_NPROC (fork bombs), RLIMIT_FSIZE, RLIMIT_NOFILE, RLIMIT_CORE=0; wall-clock watchdog at 2× CPU limit → SIGKILL of the whole process group                |
-| Output size caps            | stdout and stderr are read through a capped pipe (64 KB per test for comparison, 8 KB for display). Exceeding the cap → "Output Limit Exceeded", shown as WA with an explanation                                                   |
-| Read-only filesystem        | Image files are root-owned and not writable by uid 2000. User code can write only to `/work/<job>`, which is wiped after each job                                                                                                  |
-| Hidden tests never leak     | **Expected outputs never enter the box.** The judge Worker streams test inputs in, gets raw outputs back and compares them itself. Hidden-test inputs and outputs are never stored on the submission, sent to the client or logged |
-| Assume hostile              | One job at a time per box. A box is **recycled** (destroyed and cold-started fresh) after any RE/TLE/MLE/OLE verdict or every 50 jobs, whichever comes first                                                                       |
+| Requirement                 | Mechanism                                                                                                                                                                                                                                                                                                                                       |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Untrusted code can't escape | Each **JudgeBox is its own VM** (Cloudflare Container). Inside the VM, user code runs as uid 2000 with no capabilities, no-new-privs and a seccomp filter (`kc-exec`). Locally verified by 30 hostile probes ([spike report](./spike/judge-spike.md)); the deployed check is pending §5.7                                                       |
+| No network                  | `enableInternet = false`, no `allowedHosts` and no outbound handlers. DNS lookups time out                                                                                                                                                                                                                                                      |
+| CPU / memory / time limits  | `setrlimit` RLIMIT_CPU (hard kill), RLIMIT_AS / maxrss check (MLE), RLIMIT_NPROC (fork bombs), RLIMIT_FSIZE, RLIMIT_NOFILE, RLIMIT_CORE=0; wall-clock watchdog at 2× CPU limit → SIGKILL of the whole process group                                                                                                                             |
+| Output size caps            | stdout and stderr are read through a capped pipe (64 KB per test for comparison, 8 KB for display). Exceeding the cap → "Output Limit Exceeded", shown as WA with an explanation                                                                                                                                                                |
+| Read-only filesystem        | Image files are root-owned and not writable by uid 2000. User code can write only to `/work/<job>`, which is wiped after each job                                                                                                                                                                                                               |
+| Hidden tests never leak     | **Expected outputs never enter the box.** The judge Worker streams test inputs in, gets raw outputs back and compares them itself. Hidden-test inputs and outputs are never stored on the submission, sent to the client or logged                                                                                                              |
+| Assume hostile              | One job at a time per box. Between steps and jobs, every sandbox-uid process is killed in one atomic `kill(-1)` sweep, and files it left in `/tmp`, `/var/tmp` and `/dev/shm` are deleted. tini is PID 1 so orphans are reaped. A box is also **recycled** (destroyed and cold-started fresh) after any RE/TLE/MLE/OLE verdict or every 50 jobs |
 
 ### 5.2 Flow
 
@@ -205,7 +207,7 @@ Source code goes to R2 (`subm/{yyyy}/{mm}/{id}`), not D1. That keeps D1 well und
 2. **judge** queue consumer → `JudgePool` DO picks an idle `JudgeBox` (or cold-starts one). The pool has a configurable warm floor: 0 by default (scale to zero; opening a problem pre-warms a box), raised for contests or more users (§5.6).
 3. The box's **kc-run** receives `{lang, source, harness, limits, inputs[]}` over the container's local HTTP port.
    - It **compiles** (if needed) as uid 2000 with its own limits (10 s CPU, 1 GiB) → CE with a truncated log.
-   - It **runs** each test as uid 2000: fork → `setsid` → rlimits → `PR_SET_NO_NEW_PRIVS` → seccomp → `setuid` → `execve`. It measures CPU time and max RSS via `wait4` rusage. The parent is trusted root, so user code cannot forge the timings.
+   - It **runs** each test through `kc-exec`: `setsid` → rlimits → drop to uid 2000 → `PR_SET_NO_NEW_PRIVS` → seccomp → `execve`. It measures CPU time and max RSS via `wait4` rusage and polls memory every 10 ms. The supervisor is trusted root, so user code cannot forge the timings.
    - It streams `{output, cpu_ms, rss_kb, exit, signal}` per test back to the Worker.
 4. **judge** Worker compares against expected outputs using the problem's checker: exact (default, whitespace-normalised), float with tolerance, unordered collections, or a custom checker function run in the Worker. It stops at the first failure for Submit.
 5. It writes the verdict to D1, updates `perf_histogram`, runs the **game engine** (§7) and pushes a `verdict` event (+ `xp`, `badge`, `streak` events) to the user's **UserHub** DO, which forwards it over WebSocket.

@@ -1,6 +1,7 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+  - 'judge-spike/worker'
 onlyBuiltDependencies:
   - esbuild
   - workerd

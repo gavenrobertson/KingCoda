@@ -12,16 +12,16 @@ Decision IDs (D1–D9) refer to [ARCHITECTURE §13](./ARCHITECTURE.md#13-decisio
 
 _Needs from you before deploy: Cloudflare account ID + API token (D9). D3 is confirmed by the spike in this phase._
 
-- [ ] Monorepo scaffold: pnpm, Turborepo, TypeScript strict, ESLint, Prettier, Vitest, Playwright, GitHub Actions CI.
-- [ ] `packages/ui`: Night Court tokens (dark + derived light), fonts, Tailwind v4 theme, shadcn/ui primitives restyled; contrast-check script in CI.
-- [ ] `apps/web` on Workers via OpenNext: app shell (header with gold chip, streak flame, XP bar, avatar), theme toggle, 404/500 states.
-- [ ] `packages/db`: Drizzle schema for identity, problems, submissions, game tables; migrations; local D1 seed.
-- [ ] Auth: Better Auth with GitHub and Google OAuth (no email provider, per D5); profile creation with a handle picker; roles.
-- [ ] Wrangler environments (local / staging / production) for D1, KV, R2, Queues, DOs.
-- [ ] **Judge spike** on a deployed Container (go/no-go checklist in ARCHITECTURE §5.7). Write up findings and settle **D3**.
-- [ ] ADRs recorded for D1–D4.
+- [x] Monorepo scaffold: pnpm, Turborepo, TypeScript strict, ESLint, Prettier, Vitest, Playwright, GitHub Actions CI.
+- [x] `packages/ui`: Night Court tokens (dark + derived light), self-hosted fonts, Tailwind v4 theme, contrast check (52 pairs, WCAG AA) in CI. _Primitives are hand-built (Button, chips, XP bar, flame, gold); shadcn/ui comes in Phase 2 with the first dialogs and menus._
+- [x] `apps/web` on Workers via OpenNext: app shell (header with gold, streak flame, XP bar, avatar), theme toggle without flash, 404/error states. Verified in workerd (1.6 MiB gzipped).
+- [x] `packages/db`: Drizzle schema for identity, problems, submissions, game, contests and community; init migration; CI drift check. _Seed data arrives with the 25 problems in Phase 2._
+- [x] Auth: Better Auth with GitHub and Google OAuth (no email provider, per D5); handle onboarding; roles column.
+- [x] Wrangler environments (local / e2e / staging / production) for D1, KV, R2. _Queues and Durable Objects are added with the judge in Phase 2._
+- [~] **Judge spike**: local stage done (30/30 hostile probes, timing CV < 1%, 5 bugs found and fixed). The deployed-Container run is waiting on the Cloudflare account. See [spike report](./spike/judge-spike.md).
+- [x] ADRs recorded for D1–D4 ([`docs/adr/`](./adr/)).
 
-**Exit**: sign in with GitHub on staging, see an empty-state problems page in the KingCoda shell, CI green, and spike report delivered.
+**Exit**: sign in with GitHub on staging, see an empty-state problems page in the KingCoda shell, CI green, and spike report delivered. _Status: met locally; staging deploy and the deployed spike run need the Cloudflare account (D9)._
 
 ## Phase 2 — Browse, solve, judge (3 languages, 25 problems)
 
