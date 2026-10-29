@@ -28,23 +28,33 @@ export interface JudgeCase {
 export interface Group {
   start: number;
   count: number;
+  /**
+   * Every case in it is public (examples, custom input), so its output, printing and stderr may be
+   * shown. Public and hidden cases never share a process: code that reads all of stdin could
+   * otherwise print hidden inputs while failing a public case.
+   */
+  public: boolean;
 }
 
 /**
  * Every process gets the full time limit. Small cases share one process; each largest-input case
  * gets its own, so the limit is a per-test complexity gate rather than a budget for the whole suite.
  */
-export function groupCases(cases: ReadonlyArray<{ category?: string }>): Group[] {
+export function groupCases(
+  cases: ReadonlyArray<{ category?: string }>,
+  offset = 0,
+  isPublic = false,
+): Group[] {
   const groups: Group[] = [];
   let open: Group | null = null;
   for (const [i, c] of cases.entries()) {
     if (c.category === LARGEST_CATEGORY) {
       open = null;
-      groups.push({ start: i, count: 1 });
+      groups.push({ start: offset + i, count: 1, public: isPublic });
     } else if (open) {
       open.count++;
     } else {
-      open = { start: i, count: 1 };
+      open = { start: offset + i, count: 1, public: isPublic };
       groups.push(open);
     }
   }
@@ -56,7 +66,10 @@ export interface JobRequest {
   signature: Signature;
   lang: Language;
   code: string;
+  /** Public cases first (their results may be shown), then hidden ones. */
   cases: JudgeCase[];
+  /** How many leading cases are public. Run: all of them. Submit: the examples. */
+  publicCount: number;
   limits: { timeMs: number; memoryMb: number };
   /** Submit stops at the first failing process; Run reports every case. */
   mode: 'run' | 'submit';
@@ -78,8 +91,14 @@ const MIN_OUTPUT = 256 << 10;
 export class JobTooLarge extends Error {}
 
 export function buildJob(req: JobRequest): JobPlan {
-  const groups =
-    req.mode === 'run' ? [{ start: 0, count: req.cases.length }] : groupCases(req.cases);
+  const pub = Math.min(Math.max(0, req.publicCount), req.cases.length);
+  const groups: Group[] = [];
+  if (pub > 0) groups.push({ start: 0, count: pub, public: true });
+  if (req.mode === 'run') {
+    if (pub < req.cases.length) throw new Error('Run takes public cases only');
+  } else {
+    groups.push(...groupCases(req.cases.slice(pub), pub));
+  }
   const inputs = groups.map((g) => encodeInput(req.cases.slice(g.start, g.start + g.count)));
   const inputBytes = inputs.reduce((n, s) => n + s.length, 0);
   if (inputs.length > BOX_LIMITS.maxInputs || inputBytes > BOX_LIMITS.maxInputBytes)

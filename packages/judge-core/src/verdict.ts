@@ -43,13 +43,12 @@ export interface Verdict {
   memoryKb: number;
   compileOutput?: string;
   failure?: Failure;
+  /** Reports for the public cases that ran. */
   cases?: CaseReport[];
 }
 
 export interface InterpretOptions {
   checker: Checker;
-  /** True for sample and custom-input runs; false for hidden tests. */
-  reveal: boolean;
 }
 
 const MESSAGE_MAX = 4 << 10;
@@ -140,12 +139,16 @@ export function interpret(
     runtimeMs += step.cpuMs;
     memoryKb = Math.max(memoryKb, step.maxRssKb);
 
+    const reveal = group.public;
+    const report = (r: CaseReport) => {
+      if (reveal) reports.push(r);
+    };
     const out = parseOutput(step.stdout);
     for (let k = 0; k < group.count; k++) {
       const index = group.start + k;
       const c = cases[index]!;
       const printed = out.printed[k] ?? '';
-      const visible = opts.reveal ? { input: c.args, expected: c.expected } : {};
+      const visible = reveal ? { input: c.args, expected: c.expected } : {};
 
       if (k < out.results.length) {
         const actual = out.results[k];
@@ -156,9 +159,9 @@ export function interpret(
             index,
             category: c.category,
             ...visible,
-            ...(opts.reveal ? { actual, printed } : {}),
+            ...(reveal ? { actual, printed } : {}),
           });
-        reports.push({
+        report({
           index,
           verdict: ok ? 'AC' : 'WA',
           input: c.args,
@@ -172,15 +175,15 @@ export function interpret(
       // No result for this case: the process stopped here (or garbled its output).
       const why = out.malformed
         ? { verdict: 'RE' as const, message: 'Output contained the reserved character \\x1e' }
-        : stepFailure(step, opts.reveal);
+        : stepFailure(step, reveal);
       fail({
         ...why,
         index,
         category: c.category,
         ...visible,
-        ...(opts.reveal ? { printed } : {}),
+        ...(reveal ? { printed } : {}),
       });
-      reports.push({
+      report({
         index,
         verdict: why.verdict,
         input: c.args,
@@ -191,7 +194,7 @@ export function interpret(
       // Later cases in this process never ran.
       for (let rest = k + 1; rest < group.count; rest++) {
         const later = cases[group.start + rest]!;
-        reports.push({
+        report({
           index: group.start + rest,
           verdict: why.verdict,
           input: later.args,
@@ -206,18 +209,21 @@ export function interpret(
     // Every result arrived but the process still failed afterwards (e.g. too slow to exit).
     if (out.results.length >= group.count && step.status !== 'ok') {
       const index = group.start + group.count - 1;
-      const why = stepFailure(step, opts.reveal);
+      const why = stepFailure(step, reveal);
       fail({ ...why, index, category: cases[index]!.category });
       const last = reports[reports.length - 1];
-      if (last && last.verdict === 'AC')
+      if (reveal && last?.verdict === 'AC')
         Object.assign(last, { verdict: why.verdict, message: why.message });
     }
   }
 
   if (failure) {
     const { verdict, ...rest } = failure;
-    // Cases run in order, so on hidden tests everything before the first failure passed.
-    const passed = opts.reveal ? reports.filter((r) => r.verdict === 'AC').length : rest.index;
+    // Run reports every public case. Submit stops at the first failure, and cases run in order,
+    // so everything before it passed.
+    const passed = plan.job.stopOnFailure
+      ? rest.index
+      : reports.filter((r) => r.verdict === 'AC').length;
     return {
       verdict,
       passed,
@@ -225,7 +231,7 @@ export function interpret(
       runtimeMs,
       memoryKb,
       failure: rest,
-      ...(opts.reveal ? { cases: reports } : {}),
+      ...(reports.length ? { cases: reports } : {}),
     };
   }
   return {
@@ -234,6 +240,6 @@ export function interpret(
     total,
     runtimeMs,
     memoryKb,
-    ...(opts.reveal ? { cases: reports } : {}),
+    ...(reports.length ? { cases: reports } : {}),
   };
 }

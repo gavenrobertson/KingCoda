@@ -24,10 +24,11 @@ function judge(code: string, mode: 'run' | 'submit' = 'submit') {
     lang: 'cpp',
     code,
     cases,
+    publicCount: mode === 'run' ? cases.length : 0,
     limits: { timeMs: 2000, memoryMb: 256 },
     mode,
   });
-  return interpret(plan, runLocalBox(plan.job), cases, { checker: exact, reveal: mode === 'run' });
+  return interpret(plan, runLocalBox(plan.job), cases, { checker: exact });
 }
 
 const solution = (body: string) =>

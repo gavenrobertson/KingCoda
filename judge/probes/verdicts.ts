@@ -86,6 +86,7 @@ for (const c of CHECKS) {
     lang: 'cpp',
     code: c.code,
     cases,
+    publicCount: mode === 'run' ? cases.length : 0,
     limits: { timeMs: 1000, memoryMb: 256 },
     mode,
   });
@@ -98,7 +99,7 @@ for (const c of CHECKS) {
   if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
   const box = (await res.json()) as BoxResult;
   const ms = Math.round(performance.now() - t0);
-  const v = interpret(plan, box, cases, { checker: { kind: 'exact' }, reveal: mode === 'run' });
+  const v = interpret(plan, box, cases, { checker: { kind: 'exact' } });
   const { index, ...rest } = c.expect;
   const ok =
     Object.entries(rest).every(([k, want]) => v[k as keyof Verdict] === want) &&

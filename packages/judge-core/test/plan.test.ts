@@ -7,10 +7,10 @@ const big = { category: LARGEST_CATEGORY };
 describe('groupCases', () => {
   it('batches small cases and isolates each largest input', () => {
     expect(groupCases([{}, {}, { category: 'negatives' }, big, big, {}])).toEqual([
-      { start: 0, count: 3 },
-      { start: 3, count: 1 },
-      { start: 4, count: 1 },
-      { start: 5, count: 1 },
+      { start: 0, count: 3, public: false },
+      { start: 3, count: 1, public: false },
+      { start: 4, count: 1, public: false },
+      { start: 5, count: 1, public: false },
     ]);
     expect(groupCases([])).toEqual([]);
   });
@@ -28,6 +28,7 @@ describe('buildJob', () => {
     lang: 'cpp' as const,
     code: 'class Solution {};',
     cases,
+    publicCount: 0,
     limits: { timeMs: 1000, memoryMb: 256 },
   };
 
@@ -41,10 +42,20 @@ describe('buildJob', () => {
   });
 
   it('runs every case in one process for Run', () => {
-    const { job, groups } = buildJob({ ...base, mode: 'run' });
-    expect(groups).toEqual([{ start: 0, count: 3 }]);
+    const { job, groups } = buildJob({ ...base, publicCount: 3, mode: 'run' });
+    expect(groups).toEqual([{ start: 0, count: 3, public: true }]);
     expect(job.inputs).toHaveLength(1);
     expect(job.stopOnFailure).toBe(false);
+    expect(() => buildJob({ ...base, publicCount: 2, mode: 'run' })).toThrow();
+  });
+
+  it('never runs public and hidden cases in the same process', () => {
+    const { groups } = buildJob({ ...base, publicCount: 1, mode: 'submit' });
+    expect(groups).toEqual([
+      { start: 0, count: 1, public: true },
+      { start: 1, count: 1, public: false },
+      { start: 2, count: 1, public: false },
+    ]);
   });
 
   it('never sends expected outputs to the box', () => {

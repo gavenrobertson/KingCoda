@@ -23,6 +23,7 @@ const plan = (mode: 'run' | 'submit' = 'submit') =>
     lang: 'cpp',
     code: '',
     cases,
+    publicCount: mode === 'run' ? cases.length : 0,
     limits: { timeMs: 1000, memoryMb: 256 },
     mode,
   });
@@ -32,8 +33,8 @@ const box = (tests: BoxResult['tests'], compile = step()): BoxResult => ({
   tests,
   strays: 0,
 });
-const hidden = { checker: exact, reveal: false };
-const shown = { checker: exact, reveal: true };
+const hidden = { checker: exact };
+const shown = hidden;
 
 describe('interpret', () => {
   it('accepts, summing CPU time and taking peak memory', () => {
@@ -193,13 +194,13 @@ describe('interpret', () => {
       lang: 'cpp',
       code: '',
       cases: fcases,
+      publicCount: 0,
       limits: { timeMs: 1000, memoryMb: 256 },
       mode: 'submit',
     });
     const result = box([step({ stdout: rec(0.1000000001) })]);
     expect(
-      interpret(p, result, fcases, { checker: { kind: 'float', tolerance: 1e-6 }, reveal: false })
-        .verdict,
+      interpret(p, result, fcases, { checker: { kind: 'float', tolerance: 1e-6 } }).verdict,
     ).toBe('AC');
     expect(interpret(p, result, fcases, hidden).verdict).toBe('WA');
   });
@@ -212,6 +213,7 @@ describe('interpret', () => {
       lang: 'cpp',
       code: '',
       cases: custom,
+      publicCount: 1,
       limits: { timeMs: 1000, memoryMb: 256 },
       mode: 'run',
     });
@@ -219,5 +221,50 @@ describe('interpret', () => {
     expect(v.verdict).toBe('AC');
     expect(v.cases![0]).toMatchObject({ actual: 42 });
     expect(v.cases![0]!.expected).toBeUndefined();
+  });
+
+  it('shows the diff for a failing example on Submit, but nothing from hidden tests', () => {
+    const p = buildJob({
+      id: 'j',
+      signature: SIG,
+      lang: 'cpp',
+      code: '',
+      cases,
+      publicCount: 1,
+      limits: { timeMs: 1000, memoryMb: 256 },
+      mode: 'submit',
+    });
+    const wrongExample = interpret(
+      p,
+      box([
+        step({ stdout: rec(5) }),
+        step({ stdout: rec(2) }),
+        step({ stdout: rec(3) }),
+        step({ stdout: rec(4) }),
+      ]),
+      cases,
+      hidden,
+    );
+    expect(wrongExample).toMatchObject({
+      verdict: 'WA',
+      passed: 0,
+      failure: { index: 0, input: [[1], 1], expected: 1, actual: 5 },
+    });
+    expect(wrongExample.cases).toHaveLength(1);
+
+    const wrongHidden = interpret(
+      p,
+      box([
+        step({ stdout: rec(1) }),
+        step({ stdout: rec(9) }),
+        step({ stdout: rec(3) }),
+        step({ stdout: rec(4) }),
+      ]),
+      cases,
+      hidden,
+    );
+    expect(wrongHidden).toMatchObject({ verdict: 'WA', passed: 1, failure: { index: 1 } });
+    expect(wrongHidden.failure).not.toHaveProperty('actual');
+    expect(wrongHidden.cases).toHaveLength(1);
   });
 });
