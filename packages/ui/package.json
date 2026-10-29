@@ -1,0 +1,27 @@
+{
+  "name": "@kingcoda/ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens": "./src/tokens.ts",
+    "./theme.css": "./styles/theme.css"
+  },
+  "scripts": {
+    "build:css": "node scripts/build-css.ts",
+    "contrast": "node scripts/contrast.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "@types/react": "^19.3.0",
+    "react": "^19.3.1",
+    "typescript": "5.9.3",
+    "vitest": "^5.0.5"
+  }
+}

@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Lint
+        run: pnpm lint
+      - name: Format
+        run: pnpm format:check
+      - name: Design token contrast (WCAG AA)
+        run: pnpm tokens:check
+      - name: Migrations match schema
+        run: |
+          pnpm --filter @kingcoda/db exec drizzle-kit generate --name ci-drift-check
+          if [ -n "$(git status --porcelain -- packages/db/migrations)" ]; then
+            echo "::error::Schema changed without a migration. Run: pnpm --filter @kingcoda/db generate"
+            exit 1
+          fi
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Unit tests
+        run: pnpm test
+      - name: Build Worker bundle
+        working-directory: apps/web
+        run: pnpm exec opennextjs-cloudflare build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @kingcoda/web exec playwright install --with-deps chromium
+      - run: pnpm e2e
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
+          retention-days: 7

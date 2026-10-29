@@ -9,7 +9,8 @@ Decision IDs (D1–D9) refer to [ARCHITECTURE §13](./ARCHITECTURE.md#13-decisio
 ---
 
 ## Phase 1 — Foundations
-*Needs from you before deploy: Cloudflare account ID + API token (D9). D3 is confirmed by the spike in this phase.*
+
+_Needs from you before deploy: Cloudflare account ID + API token (D9). D3 is confirmed by the spike in this phase._
 
 - [ ] Monorepo scaffold: pnpm, Turborepo, TypeScript strict, ESLint, Prettier, Vitest, Playwright, GitHub Actions CI.
 - [ ] `packages/ui`: Night Court tokens (dark + derived light), fonts, Tailwind v4 theme, shadcn/ui primitives restyled; contrast-check script in CI.
@@ -23,7 +24,8 @@ Decision IDs (D1–D9) refer to [ARCHITECTURE §13](./ARCHITECTURE.md#13-decisio
 **Exit**: sign in with GitHub on staging, see an empty-state problems page in the KingCoda shell, CI green, and spike report delivered.
 
 ## Phase 2 — Browse, solve, judge (3 languages, 25 problems)
-*Needs: D3 confirmed by the spike*
+
+_Needs: D3 confirmed by the spike_
 
 - [ ] `packages/problem-schema` + `packages/harness` for Python, JavaScript and C++ (types: scalars, arrays, 2D arrays, strings, ListNode, TreeNode).
 - [ ] `judge-image` + `kc-run`: compile/run, rlimits, seccomp, output caps, rusage; hostile-code test suite.
@@ -50,7 +52,8 @@ Decision IDs (D1–D9) refer to [ARCHITECTURE §13](./ARCHITECTURE.md#13-decisio
 **Exit**: `pipeline validate --all` green on 150 problems × 6 languages in CI.
 
 ## Phase 4 — Profiles, XP, streaks, badges, reward moments
-*Store included (D7 approved)*
+
+_Store included (D7 approved)_
 
 - [ ] `packages/game`: ledger, XP/levels, points, gold, first-try bonus, streaks with time zones and freezes, badge rules — exhaustively unit-tested.
 - [ ] Accepted moment: particle burst (skippable), XP tick-up with gold-flash segment, Beats-X% cards, personal-best callouts, optional sound, full reduced-motion path.

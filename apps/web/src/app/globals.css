@@ -1,0 +1,38 @@
+@import 'tailwindcss';
+@import '@kingcoda/ui/theme.css';
+@import '@fontsource-variable/bricolage-grotesque/wght.css';
+@import '@fontsource-variable/geist/wght.css';
+@import '@fontsource-variable/jetbrains-mono/wght.css';
+
+@source '../../../../packages/ui/src';
+
+@layer base {
+  html {
+    background: var(--kc-ground);
+    color: var(--kc-text);
+  }
+  body {
+    @apply min-h-dvh bg-ground font-sans text-sm leading-normal text-text antialiased;
+  }
+  a {
+    color: var(--kc-violet-light);
+  }
+  :focus-visible {
+    outline: 2px solid var(--kc-violet-light);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--kc-violet) 40%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

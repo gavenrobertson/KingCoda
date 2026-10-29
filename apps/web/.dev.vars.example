@@ -1,0 +1,6 @@
+# Copy to .dev.vars for local development. Never commit .dev.vars.
+BETTER_AUTH_SECRET=generate-with-openssl-rand-base64-32
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=

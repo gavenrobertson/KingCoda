@@ -61,15 +61,15 @@ Decisions marked **⚑ DECISION** are expensive to reverse. All recommendations 
 
 ### 2.1 Why this shape
 
-| Concern | Choice | Why |
-|---|---|---|
-| Web framework | Next.js 16 App Router on Workers via **OpenNext** (`@opennextjs/cloudflare`) | Matches your brief, supports RSC, server actions, ISR and middleware. Cloudflare now *recommends* vinext for new apps, but vinext is still beta. OpenNext runs real Next.js. **⚑ DECISION D2** |
-| Database | **D1** (SQLite) + **Drizzle ORM** | Native to Cloudflare, no connection management, 30-day point-in-time recovery. A 10 GB cap per DB is ample once source code lives in R2 (see §4.4). Drizzle supports D1 more completely than Prisma. **⚑ DECISION D1** |
-| Redis replacement | Leaderboards: D1 indexed tables + KV page cache. Rate limiting: Rate Limiting binding. Queue: **Cloudflare Queues**. Realtime: **Durable Objects** (WebSocket hibernation). | Each Redis job has a first-party Cloudflare equivalent. Sorted sets become indexed `ORDER BY points DESC` queries, which hold up to roughly 100k ranked users (§7.2). |
-| Judge | **Cloudflare Containers** running our own runner (`kc-run`) | VM-level isolation per box, outbound internet off, scale to zero, active-CPU pricing. A spike in Phase 1 de-risks it (§5.7). **⚑ DECISION D3** |
-| Auth | **Better Auth** with the D1/Drizzle adapter | Auth.js joined the Better Auth project in 2025. Better Auth is the maintained path, runs on Workers, and supports OAuth, magic links, sessions and an admin role. **⚑ DECISION D4** |
-| Long jobs | **Workflows** | Contest finalisation and bulk re-judge need durable, retryable, multi-step execution. |
-| Images | Satori (`workers-og`) → PNG in R2 | Shareable weekly recap card rendered at the edge. |
+| Concern           | Choice                                                                                                                                                                      | Why                                                                                                                                                                                                                    |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web framework     | Next.js 16 App Router on Workers via **OpenNext** (`@opennextjs/cloudflare`)                                                                                                | Matches your brief, supports RSC, server actions, ISR and middleware. Cloudflare now _recommends_ vinext for new apps, but vinext is still beta. OpenNext runs real Next.js. **⚑ DECISION D2**                         |
+| Database          | **D1** (SQLite) + **Drizzle ORM**                                                                                                                                           | Native to Cloudflare, no connection management, 30-day point-in-time recovery. A 10 GB cap per DB is ample once source code lives in R2 (see §4.4). Drizzle supports D1 more completely than Prisma. **⚑ DECISION D1** |
+| Redis replacement | Leaderboards: D1 indexed tables + KV page cache. Rate limiting: Rate Limiting binding. Queue: **Cloudflare Queues**. Realtime: **Durable Objects** (WebSocket hibernation). | Each Redis job has a first-party Cloudflare equivalent. Sorted sets become indexed `ORDER BY points DESC` queries, which hold up to roughly 100k ranked users (§7.2).                                                  |
+| Judge             | **Cloudflare Containers** running our own runner (`kc-run`)                                                                                                                 | VM-level isolation per box, outbound internet off, scale to zero, active-CPU pricing. A spike in Phase 1 de-risks it (§5.7). **⚑ DECISION D3**                                                                         |
+| Auth              | **Better Auth** with the D1/Drizzle adapter                                                                                                                                 | Auth.js joined the Better Auth project in 2025. Better Auth is the maintained path, runs on Workers, and supports OAuth, magic links, sessions and an admin role. **⚑ DECISION D4**                                    |
+| Long jobs         | **Workflows**                                                                                                                                                               | Contest finalisation and bulk re-judge need durable, retryable, multi-step execution.                                                                                                                                  |
+| Images            | Satori (`workers-og`) → PNG in R2                                                                                                                                           | Shareable weekly recap card rendered at the edge.                                                                                                                                                                      |
 
 ### 2.2 Repository layout (pnpm + Turborepo monorepo)
 
@@ -129,51 +129,51 @@ IDs are ULIDs (sortable, generated in the Worker). Timestamps are integer ms. Da
 
 ### 4.1 Identity & profile
 
-| Table | Key columns |
-|---|---|
-| `user`, `account`, `session`, `verification` | Better Auth standard tables (+ `role`: user / moderator / admin) |
-| `profile` | `user_id` PK, `handle` unique, `display_name`, `tz`, `main_lang`, `xp`, `level`, `gold`, `points_all_time`, `rating`, `rating_peak`, `streak_current`, `streak_best`, `streak_last_day`, `freezes_held`, `sound_on`, `reduced_motion_pref`, `equipped` (JSON: theme, frame, banner, fx, flame, title) |
-| `follow` | `follower_id`, `followee_id` (friends leaderboard = mutual or one-way follow) |
+| Table                                        | Key columns                                                                                                                                                                                                                                                                                           |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `user`, `account`, `session`, `verification` | Better Auth standard tables (+ `role`: user / moderator / admin)                                                                                                                                                                                                                                      |
+| `profile`                                    | `user_id` PK, `handle` unique, `display_name`, `tz`, `main_lang`, `xp`, `level`, `gold`, `points_all_time`, `rating`, `rating_peak`, `streak_current`, `streak_best`, `streak_last_day`, `freezes_held`, `sound_on`, `reduced_motion_pref`, `equipped` (JSON: theme, frame, banner, fx, flame, title) |
+| `follow`                                     | `follower_id`, `followee_id` (friends leaderboard = mutual or one-way follow)                                                                                                                                                                                                                         |
 
 ### 4.2 Problems & content
 
-| Table | Key columns |
-|---|---|
-| `problem` | `id`, `number` (stable display number), `slug` unique, `title`, `difficulty` (authored), `difficulty_display` (calibrated), `tags` (JSON) + `problem_tag` join for filtering, `status` (draft/published/retired), `version`, `license`, `source`, `accepted_count`, `submission_count`, `acceptance_rate`, `median_attempts`, `is_premium` (reserved) |
-| `problem_content` | `problem_id`, `version`, `statement_md`, `constraints_md`, `examples` (JSON), `hints` (JSON, tiered with unlock thresholds), `signature` (JSON), `starter_code` (JSON per language), `editorial_md`, `reference_solutions` (JSON per language, served only after solve/reveal) |
-| `test_set` | `problem_id`, `version`, `kind` (sample/hidden), `r2_key`, `count`, `checksum`. Test **inputs and expected outputs live in R2**, never in client bundles |
-| `track`, `track_problem` | Company-style "track" lists (e.g. "Interview Classics", "Speed Round") |
-| `study_plan`, `study_plan_item` | Ordered curated plans with sections |
-| `problem_fts` | FTS5 virtual table over title + tags + statement for search |
+| Table                           | Key columns                                                                                                                                                                                                                                                                                                                                           |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `problem`                       | `id`, `number` (stable display number), `slug` unique, `title`, `difficulty` (authored), `difficulty_display` (calibrated), `tags` (JSON) + `problem_tag` join for filtering, `status` (draft/published/retired), `version`, `license`, `source`, `accepted_count`, `submission_count`, `acceptance_rate`, `median_attempts`, `is_premium` (reserved) |
+| `problem_content`               | `problem_id`, `version`, `statement_md`, `constraints_md`, `examples` (JSON), `hints` (JSON, tiered with unlock thresholds), `signature` (JSON), `starter_code` (JSON per language), `editorial_md`, `reference_solutions` (JSON per language, served only after solve/reveal)                                                                        |
+| `test_set`                      | `problem_id`, `version`, `kind` (sample/hidden), `r2_key`, `count`, `checksum`. Test **inputs and expected outputs live in R2**, never in client bundles                                                                                                                                                                                              |
+| `track`, `track_problem`        | Company-style "track" lists (e.g. "Interview Classics", "Speed Round")                                                                                                                                                                                                                                                                                |
+| `study_plan`, `study_plan_item` | Ordered curated plans with sections                                                                                                                                                                                                                                                                                                                   |
+| `problem_fts`                   | FTS5 virtual table over title + tags + statement for search                                                                                                                                                                                                                                                                                           |
 
 ### 4.3 Practice state
 
-| Table | Key columns |
-|---|---|
+| Table          | Key columns                                                                                                                                                                                                                                                      |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `user_problem` | `user_id`+`problem_id` PK, `status` (todo/attempted/solved), `attempts`, `wrong_streak` (drives hint unlocks), `first_accepted_at`, `first_try` (bool), `best_runtime_ms`, `best_memory_kb`, `langs_solved` (bitmask), `editorial_revealed_at`, `hints_revealed` |
-| `draft` | `user_id`, `problem_id`, `lang`, `code`, `updated_at` |
-| `activity_day` | `user_id`, `day`, `submissions`, `accepted`, `freeze_used` → heatmap + streak source of truth |
+| `draft`        | `user_id`, `problem_id`, `lang`, `code`, `updated_at`                                                                                                                                                                                                            |
+| `activity_day` | `user_id`, `day`, `submissions`, `accepted`, `freeze_used` → heatmap + streak source of truth                                                                                                                                                                    |
 
 ### 4.4 Submissions & judging
 
-| Table | Key columns |
-|---|---|
-| `submission` | `id`, `user_id`, `problem_id`, `problem_version`, `lang`, `mode` (run/submit/contest/virtual), `contest_id?`, `status` (queued/running/done/error), `verdict` (AC/WA/TLE/MLE/RE/CE/IE), `passed`, `total`, `runtime_ms` (max CPU over tests), `memory_kb` (max RSS), `code_r2_key`, `code_hash`, `code_bytes`, `fail_case` (JSON: only for **sample** tests, plus a truncated diff), `compile_log` (truncated), `created_at`, `judged_at` |
-| `perf_histogram` | `problem_id`, `lang`, `metric` (runtime/memory), `bucket`, `count` → runtime/memory percentile and the distribution chart. Updated incrementally on each accepted submission |
+| Table            | Key columns                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `submission`     | `id`, `user_id`, `problem_id`, `problem_version`, `lang`, `mode` (run/submit/contest/virtual), `contest_id?`, `status` (queued/running/done/error), `verdict` (AC/WA/TLE/MLE/RE/CE/IE), `passed`, `total`, `runtime_ms` (max CPU over tests), `memory_kb` (max RSS), `code_r2_key`, `code_hash`, `code_bytes`, `fail_case` (JSON: only for **sample** tests, plus a truncated diff), `compile_log` (truncated), `created_at`, `judged_at` |
+| `perf_histogram` | `problem_id`, `lang`, `metric` (runtime/memory), `bucket`, `count` → runtime/memory percentile and the distribution chart. Updated incrementally on each accepted submission                                                                                                                                                                                                                                                              |
 
 Source code goes to R2 (`subm/{yyyy}/{mm}/{id}`), not D1. That keeps D1 well under its 10 GB cap for millions of submissions. If D1 does outgrow it, `submission` is the one table built to shard by month into separate D1 databases. No other table needs to.
 
 ### 4.5 Game layer
 
-| Table | Key columns |
-|---|---|
-| `ledger` | Append-only reward events: `user_id`, `kind` (solve/first_try/daily/streak_bonus/contest/purchase/admin), `xp`, `points`, `gold`, `ref`, `week_key`, `month_key`, `created_at`. **Every** balance is derivable from the ledger, so balances can be audited and rebuilt |
-| `board` | Materialised leaderboard rows: `scope` (all/week/month/lang:py/…), `period_key`, `user_id`, `points`, `solved`, `updated_at`. Index `(scope, period_key, points DESC, updated_at)` |
-| `rank_snapshot` | Nightly `(scope, period_key, user_id, rank)` → rank-change arrows |
-| `user_badge` | `user_id`, `badge_id`, `earned_at`. Badge **definitions live in code** (`packages/game/badges.ts`) so they are versioned and testable |
-| `daily_challenge` | `day` (UTC) PK, `problem_id`. `daily_completion`: `user_id`, `day` |
-| `store_item` / `user_item` | Cosmetic catalogue (from the design canvas: editor themes, avatar frames, banners, celebrations, flames, titles, streak freeze) and ownership |
-| `recap` | `user_id`, `week_key`, `stats` (JSON), `image_r2_key` |
+| Table                      | Key columns                                                                                                                                                                                                                                                            |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ledger`                   | Append-only reward events: `user_id`, `kind` (solve/first_try/daily/streak_bonus/contest/purchase/admin), `xp`, `points`, `gold`, `ref`, `week_key`, `month_key`, `created_at`. **Every** balance is derivable from the ledger, so balances can be audited and rebuilt |
+| `board`                    | Materialised leaderboard rows: `scope` (all/week/month/lang:py/…), `period_key`, `user_id`, `points`, `solved`, `updated_at`. Index `(scope, period_key, points DESC, updated_at)`                                                                                     |
+| `rank_snapshot`            | Nightly `(scope, period_key, user_id, rank)` → rank-change arrows                                                                                                                                                                                                      |
+| `user_badge`               | `user_id`, `badge_id`, `earned_at`. Badge **definitions live in code** (`packages/game/badges.ts`) so they are versioned and testable                                                                                                                                  |
+| `daily_challenge`          | `day` (UTC) PK, `problem_id`. `daily_completion`: `user_id`, `day`                                                                                                                                                                                                     |
+| `store_item` / `user_item` | Cosmetic catalogue (from the design canvas: editor themes, avatar frames, banners, celebrations, flames, titles, streak freeze) and ownership                                                                                                                          |
+| `recap`                    | `user_id`, `week_key`, `stats` (JSON), `image_r2_key`                                                                                                                                                                                                                  |
 
 ### 4.6 Contests
 
@@ -189,15 +189,15 @@ Source code goes to R2 (`subm/{yyyy}/{mm}/{id}`), not D1. That keeps D1 well und
 
 ### 5.1 Requirements → mechanisms
 
-| Requirement | Mechanism |
-|---|---|
-| Untrusted code can't escape | Each **JudgeBox is its own VM** (Cloudflare Container). Inside the VM, user code runs as uid 2000 with no capabilities (default scheduling policy; to be verified in the spike, §5.7) under a seccomp allowlist |
-| No network | `enableInternet = false`, no `allowedHosts` and no outbound handlers. DNS lookups time out |
-| CPU / memory / time limits | `setrlimit` RLIMIT_CPU (hard kill), RLIMIT_AS / maxrss check (MLE), RLIMIT_NPROC (fork bombs), RLIMIT_FSIZE, RLIMIT_NOFILE, RLIMIT_CORE=0; wall-clock watchdog at 2× CPU limit → SIGKILL of the whole process group |
-| Output size caps | stdout and stderr are read through a capped pipe (64 KB per test for comparison, 8 KB for display). Exceeding the cap → "Output Limit Exceeded", shown as WA with an explanation |
-| Read-only filesystem | Image files are root-owned and not writable by uid 2000. User code can write only to `/work/<job>`, which is wiped after each job |
-| Hidden tests never leak | **Expected outputs never enter the box.** The judge Worker streams test inputs in, gets raw outputs back and compares them itself. Hidden-test inputs and outputs are never stored on the submission, sent to the client or logged |
-| Assume hostile | One job at a time per box. A box is **recycled** (destroyed and cold-started fresh) after any RE/TLE/MLE/OLE verdict or every 50 jobs, whichever comes first |
+| Requirement                 | Mechanism                                                                                                                                                                                                                          |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Untrusted code can't escape | Each **JudgeBox is its own VM** (Cloudflare Container). Inside the VM, user code runs as uid 2000 with no capabilities (default scheduling policy; to be verified in the spike, §5.7) under a seccomp allowlist                    |
+| No network                  | `enableInternet = false`, no `allowedHosts` and no outbound handlers. DNS lookups time out                                                                                                                                         |
+| CPU / memory / time limits  | `setrlimit` RLIMIT_CPU (hard kill), RLIMIT_AS / maxrss check (MLE), RLIMIT_NPROC (fork bombs), RLIMIT_FSIZE, RLIMIT_NOFILE, RLIMIT_CORE=0; wall-clock watchdog at 2× CPU limit → SIGKILL of the whole process group                |
+| Output size caps            | stdout and stderr are read through a capped pipe (64 KB per test for comparison, 8 KB for display). Exceeding the cap → "Output Limit Exceeded", shown as WA with an explanation                                                   |
+| Read-only filesystem        | Image files are root-owned and not writable by uid 2000. User code can write only to `/work/<job>`, which is wiped after each job                                                                                                  |
+| Hidden tests never leak     | **Expected outputs never enter the box.** The judge Worker streams test inputs in, gets raw outputs back and compares them itself. Hidden-test inputs and outputs are never stored on the submission, sent to the client or logged |
+| Assume hostile              | One job at a time per box. A box is **recycled** (destroyed and cold-started fresh) after any RE/TLE/MLE/OLE verdict or every 50 jobs, whichever comes first                                                                       |
 
 ### 5.2 Flow
 
@@ -214,14 +214,14 @@ Time limits are per problem, **per language**: a base limit × a language multip
 
 ### 5.3 Languages (minimum set)
 
-| Language | Toolchain | Notes |
-|---|---|---|
-| Python | CPython 3.13 | `-S -B`, no site-packages beyond the stdlib allowlist |
-| JavaScript | Node 24 | `--max-old-space-size` tied to the memory limit |
-| TypeScript | Node 24 + swc transpile-only | Type errors are not CE (matches common judges); syntax errors are |
-| Java | OpenJDK 21 | Class-data-sharing archive pre-built for fast JVM start; `-Xmx` from the limit |
-| C++ | g++ 14, `-O2 -std=c++20` | Precompiled `bits/stdc++.h` header |
-| Go | Go 1.25 | Build cache pre-warmed in the image; `GOMEMLIMIT` set |
+| Language   | Toolchain                    | Notes                                                                          |
+| ---------- | ---------------------------- | ------------------------------------------------------------------------------ |
+| Python     | CPython 3.13                 | `-S -B`, no site-packages beyond the stdlib allowlist                          |
+| JavaScript | Node 24                      | `--max-old-space-size` tied to the memory limit                                |
+| TypeScript | Node 24 + swc transpile-only | Type errors are not CE (matches common judges); syntax errors are              |
+| Java       | OpenJDK 21                   | Class-data-sharing archive pre-built for fast JVM start; `-Xmx` from the limit |
+| C++        | g++ 14, `-O2 -std=c++20`     | Precompiled `bits/stdc++.h` header                                             |
+| Go         | Go 1.25                      | Build cache pre-warmed in the image; `GOMEMLIMIT` set                          |
 
 The image is ~2.5 GB, which fits a custom instance with 1 vCPU, 3 GiB memory and 12 GB disk.
 
@@ -231,11 +231,11 @@ A problem declares a **typed signature**:
 
 ```yaml
 signature:
-  kind: function            # or: design (class with method-call sequences)
+  kind: function # or: design (class with method-call sequences)
   name: longestCalm
   params:
-    - { name: speeds, type: "int[]" }
-    - { name: k,      type: int }
+    - { name: speeds, type: 'int[]' }
+    - { name: k, type: int }
   returns: int
 ```
 
@@ -332,11 +332,11 @@ All rules live in `packages/game` as pure functions with unit tests. The judge c
 
 ### 7.1 Currencies
 
-| | Earned | Spent / used | Visible |
-|---|---|---|---|
-| **XP** (never decreases) | Easy 10 / Medium 25 / Hard 50 on **first** accept per problem; first-try +50%; daily +15; streak milestones | — | Level bar in nav |
-| **Points** (leaderboards) | Same base as XP + first-try bonus + daily bonus; contest points separately | — | Leaderboards |
-| **Gold** (cosmetics) | Matches the Store artboard: Easy +10, Medium +25, Hard +50, daily +15, 7-day streak +50; first accept per problem only (no farming) | Store cosmetics, streak freeze (150, max 2 held) | Gold chip in nav |
+|                           | Earned                                                                                                                              | Spent / used                                     | Visible          |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------- |
+| **XP** (never decreases)  | Easy 10 / Medium 25 / Hard 50 on **first** accept per problem; first-try +50%; daily +15; streak milestones                         | —                                                | Level bar in nav |
+| **Points** (leaderboards) | Same base as XP + first-try bonus + daily bonus; contest points separately                                                          | —                                                | Leaderboards     |
+| **Gold** (cosmetics)      | Matches the Store artboard: Easy +10, Medium +25, Hard +50, daily +15, 7-day streak +50; first accept per problem only (no farming) | Store cosmetics, streak freeze (150, max 2 held) | Gold chip in nav |
 
 **Levels**: `xpForLevel(L) = round(C·(L−1)²)` with C ≈ 15, so Level 15 ≈ 3,000 XP, as in the design (Lv 14 · 2,375 / 3,000). The curve is tuned in Phase 4.
 
@@ -361,13 +361,13 @@ First Solve · Week Warrior (7-day) · Monthlong (30) · Centurion (100) · Hard
 
 ### 7.5 Moments
 
-| Moment | Experience |
-|---|---|
-| Accepted | Particle burst (equipped "celebration" cosmetic; Classic confetti default), skippable with Esc/click, 1.2 s max. XP counter ticks up with a pale-gold gain segment that settles into the bar. Runtime/memory "Beats X%" cards. Personal-best callout when applicable. Optional sound |
-| Wrong Answer | Calm, encouraging copy ("47 of 62 passing — close."). Expected vs. actual diff for sample tests; for hidden tests, "a hidden test failed" plus the test *category* (e.g. "edge: all equal") without data. Hint unlocks after N wrong answers (tiered, e.g. 2 / 4 / 6) |
-| TLE / MLE | Points at complexity or data structures (verdict tone table in DESIGN.md) |
-| CE / RE | Jumps the editor to the offending line; shows the trimmed trace |
-| Weekly recap | Monday cron renders a 1080×1350 share card (Recap artboard) to R2. In-app card with Share / Download |
+| Moment       | Experience                                                                                                                                                                                                                                                                           |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Accepted     | Particle burst (equipped "celebration" cosmetic; Classic confetti default), skippable with Esc/click, 1.2 s max. XP counter ticks up with a pale-gold gain segment that settles into the bar. Runtime/memory "Beats X%" cards. Personal-best callout when applicable. Optional sound |
+| Wrong Answer | Calm, encouraging copy ("47 of 62 passing — close."). Expected vs. actual diff for sample tests; for hidden tests, "a hidden test failed" plus the test _category_ (e.g. "edge: all equal") without data. Hint unlocks after N wrong answers (tiered, e.g. 2 / 4 / 6)                |
+| TLE / MLE    | Points at complexity or data structures (verdict tone table in DESIGN.md)                                                                                                                                                                                                            |
+| CE / RE      | Jumps the editor to the offending line; shows the trimmed trace                                                                                                                                                                                                                      |
+| Weekly recap | Monday cron renders a 1080×1350 share card (Recap artboard) to R2. In-app card with Share / Download                                                                                                                                                                                 |
 
 ---
 
@@ -383,17 +383,17 @@ First Solve · Week Warrior (7-day) · Monthlong (30) · Centurion (100) · Hard
 
 ## 9. Security
 
-| Area | Controls |
-|---|---|
-| Sandbox | §5.1. The judge Worker treats everything from a box as untrusted input: sizes are capped, JSON is parsed defensively, and the box never sees secrets or expected outputs |
-| AuthN/Z | Better Auth sessions (httpOnly, Secure, SameSite=Lax cookies), CSRF protection on mutations, role checks in a single `requireRole()` middleware, and an admin audit log |
-| Rate limiting | Rate Limiting binding on submit, run, auth, post, vote; Turnstile on sign-up and on the first post |
-| Content | Server-side Markdown → sanitised HTML (allowlist). No raw HTML from users. KaTeX `trust: false`. CSP with nonces; no inline event handlers |
-| Hidden tests | Stored only in R2 under a judge-only binding. The web Worker has no read access to hidden test keys (separate bucket + binding) |
-| Editorials / reference code | Served only to users who have solved the problem or recorded a reveal |
-| Contests | Problems are hidden until start, per-user submission throttles and post-contest plagiarism review |
-| Secrets | `wrangler secret` only. Nothing is committed. GitHub Actions uses scoped API tokens |
-| Privacy | Account deletion cascades and anonymises leaderboard rows. Data export on request |
+| Area                        | Controls                                                                                                                                                                 |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Sandbox                     | §5.1. The judge Worker treats everything from a box as untrusted input: sizes are capped, JSON is parsed defensively, and the box never sees secrets or expected outputs |
+| AuthN/Z                     | Better Auth sessions (httpOnly, Secure, SameSite=Lax cookies), CSRF protection on mutations, role checks in a single `requireRole()` middleware, and an admin audit log  |
+| Rate limiting               | Rate Limiting binding on submit, run, auth, post, vote; Turnstile on sign-up and on the first post                                                                       |
+| Content                     | Server-side Markdown → sanitised HTML (allowlist). No raw HTML from users. KaTeX `trust: false`. CSP with nonces; no inline event handlers                               |
+| Hidden tests                | Stored only in R2 under a judge-only binding. The web Worker has no read access to hidden test keys (separate bucket + binding)                                          |
+| Editorials / reference code | Served only to users who have solved the problem or recorded a reveal                                                                                                    |
+| Contests                    | Problems are hidden until start, per-user submission throttles and post-contest plagiarism review                                                                        |
+| Secrets                     | `wrangler secret` only. Nothing is committed. GitHub Actions uses scoped API tokens                                                                                      |
+| Privacy                     | Account deletion cascades and anonymises leaderboard rows. Data export on request                                                                                        |
 
 ---
 
@@ -425,14 +425,14 @@ Workers Logs + Traces enabled. Workers Analytics Engine records judge latency, q
 
 ## 13. Decisions needed from you
 
-| # | Decision | Recommendation | Alternatives |
-|---|---|---|---|
-| **D1** | Primary database | **Cloudflare D1 + Drizzle** | Postgres (Neon/Supabase) via Hyperdrive: more headroom and real `ORDER BY` window functions, but the database lives outside Cloudflare |
-| **D2** | Next.js on Workers adapter | **OpenNext** (runs real Next.js, mature) | vinext (Cloudflare's new default, beta); React Router v7 (GA on Workers, not Next.js) |
-| **D3** | Judge architecture | **Cloudflare Containers + custom `kc-run`**, gated by the Phase 1 spike | One-VM-per-submission on Containers (stricter, slower, pricier); self-hosted Judge0 on a VPS (proven, not on Cloudflare) |
-| **D4** | Auth library | **Better Auth** | Auth.js v5 (your brief; now maintenance-mode under Better Auth) |
-| **D5** | Sign-in methods | **GitHub (+ Google) OAuth only** for personal use; no email provider needed | Add email magic links later (Cloudflare Email Service or Resend) |
-| **D6** | AI-assisted problem drafting | **Drafted in Claude Code sessions** (no API bill), reviewed per batch | Claude API bulk mode (per-token cost); hand-authoring only |
-| **D7** | Store and gold economy from the design canvas | **Include** (cosmetic only; never affects score or rank) in Phase 4–5 | Defer to after Phase 7 |
-| **D8** | Content licence | **CC BY-SA 4.0** for text, **MIT** for code | CC BY 4.0; all rights reserved |
-| **D9** | Cloudflare account, domain, plan | Workers Paid ($5/mo) is required for Containers; that is roughly the whole bill for personal use (§5.6). Need: account ID and an API token for CI. A custom domain is optional; the free `*.workers.dev` URL works | — |
+| #      | Decision                                      | Recommendation                                                                                                                                                                                                     | Alternatives                                                                                                                           |
+| ------ | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **D1** | Primary database                              | **Cloudflare D1 + Drizzle**                                                                                                                                                                                        | Postgres (Neon/Supabase) via Hyperdrive: more headroom and real `ORDER BY` window functions, but the database lives outside Cloudflare |
+| **D2** | Next.js on Workers adapter                    | **OpenNext** (runs real Next.js, mature)                                                                                                                                                                           | vinext (Cloudflare's new default, beta); React Router v7 (GA on Workers, not Next.js)                                                  |
+| **D3** | Judge architecture                            | **Cloudflare Containers + custom `kc-run`**, gated by the Phase 1 spike                                                                                                                                            | One-VM-per-submission on Containers (stricter, slower, pricier); self-hosted Judge0 on a VPS (proven, not on Cloudflare)               |
+| **D4** | Auth library                                  | **Better Auth**                                                                                                                                                                                                    | Auth.js v5 (your brief; now maintenance-mode under Better Auth)                                                                        |
+| **D5** | Sign-in methods                               | **GitHub (+ Google) OAuth only** for personal use; no email provider needed                                                                                                                                        | Add email magic links later (Cloudflare Email Service or Resend)                                                                       |
+| **D6** | AI-assisted problem drafting                  | **Drafted in Claude Code sessions** (no API bill), reviewed per batch                                                                                                                                              | Claude API bulk mode (per-token cost); hand-authoring only                                                                             |
+| **D7** | Store and gold economy from the design canvas | **Include** (cosmetic only; never affects score or rank) in Phase 4–5                                                                                                                                              | Defer to after Phase 7                                                                                                                 |
+| **D8** | Content licence                               | **CC BY-SA 4.0** for text, **MIT** for code                                                                                                                                                                        | CC BY 4.0; all rights reserved                                                                                                         |
+| **D9** | Cloudflare account, domain, plan              | Workers Paid ($5/mo) is required for Containers; that is roughly the whole bill for personal use (§5.6). Need: account ID and an API token for CI. A custom domain is optional; the free `*.workers.dev` URL works | —                                                                                                                                      |

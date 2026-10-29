@@ -1,0 +1,2 @@
+# Local Playwright runs only (KC_E2E=1). Not a real secret; never used by a deployed Worker.
+BETTER_AUTH_SECRET=e2e-only-not-secret-0123456789abcdefghijklmnop

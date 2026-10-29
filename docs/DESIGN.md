@@ -6,65 +6,65 @@ Source of truth: the **KingCoda** design canvas (artboards: Problems, Problem wo
 
 ## Typography
 
-| Role | Family | Weights | Use |
-|---|---|---|---|
-| Display | Bricolage Grotesque (opsz 12–96) | 500–800, headings at 750 | Page titles, verdict headline ("Accepted."), big numbers (rank, streak, recap) |
-| UI / prose | Geist | 400–700 | Interface, problem statements |
-| Mono | JetBrains Mono | 400, 500, 700 | Code, stats, XP counts, shortcuts, gold amounts |
+| Role       | Family                           | Weights                  | Use                                                                            |
+| ---------- | -------------------------------- | ------------------------ | ------------------------------------------------------------------------------ |
+| Display    | Bricolage Grotesque (opsz 12–96) | 500–800, headings at 750 | Page titles, verdict headline ("Accepted."), big numbers (rank, streak, recap) |
+| UI / prose | Geist                            | 400–700                  | Interface, problem statements                                                  |
+| Mono       | JetBrains Mono                   | 400, 500, 700            | Code, stats, XP counts, shortcuts, gold amounts                                |
 
 Base: 14px / 1.5 UI text. Display letter-spacing −0.02 to −0.04em. Section labels: 12px, 700, uppercase, 0.08em tracking, muted.
 
 ## Color tokens — dark (default)
 
-| Token | Hex | Use |
-|---|---|---|
-| `--ground` | `#0B0D14` | Page background |
-| `--surface` | `#121521` | Cards, panels |
-| `--surface-sunken` | `#10131D` | Tables, console |
-| `--raised` | `#181C2A` | Secondary buttons, inputs |
-| `--hover` | `#161A28` / `#1C2131` | Row hover / ghost button hover |
-| `--border` | `#232838` | Default borders |
-| `--border-subtle` | `#1E2333` | Header divider, row dividers |
-| `--border-strong` | `#2E3448` | Outlines, inactive rings |
-| `--text` | `#ECEEF5` | Primary text |
-| `--text-muted` | `#A3AABD` | Secondary text (passes AA on ground and surface) |
-| `--text-faint` | `#5B6278` | Locked/disabled icons only. **Not for text** (fails AA) |
+| Token              | Hex                   | Use                                                     |
+| ------------------ | --------------------- | ------------------------------------------------------- |
+| `--ground`         | `#0B0D14`             | Page background                                         |
+| `--surface`        | `#121521`             | Cards, panels                                           |
+| `--surface-sunken` | `#10131D`             | Tables, console                                         |
+| `--raised`         | `#181C2A`             | Secondary buttons, inputs                               |
+| `--hover`          | `#161A28` / `#1C2131` | Row hover / ghost button hover                          |
+| `--border`         | `#232838`             | Default borders                                         |
+| `--border-subtle`  | `#1E2333`             | Header divider, row dividers                            |
+| `--border-strong`  | `#2E3448`             | Outlines, inactive rings                                |
+| `--text`           | `#ECEEF5`             | Primary text                                            |
+| `--text-muted`     | `#A3AABD`             | Secondary text (passes AA on ground and surface)        |
+| `--text-faint`     | `#5B6278`             | Locked/disabled icons only. **Not for text** (fails AA) |
 
 ### Brand & reward
 
-| Token | Hex | Use |
-|---|---|---|
-| `--violet` | `#6A57F5` | Primary actions (Submit), logo tile, focus brand |
-| `--violet-hover` | `#7A68FF` | Primary hover |
-| `--violet-light` | `#A79BFF` | Links, focus ring (2px, offset 2px) |
-| `--violet-tint` | `#2B2550` / `#1A1733` | Avatar fill, selected chips |
-| `--gold` | `#FFC94A` | XP, gold, level, crown, "you earned something" |
-| `--gold-ink` | `#1A1406` | Text on gold buttons |
-| `--gold-deep` | `#B9811F` | Coin engraving |
-| `--gold-flash` | `#FFF1C2` | XP gain segment flash, 30+ flame core |
-| `--flame` | `#FF9F43` | Streak flame, "today" ring |
-| `--frost` | `#7DD3FC` | Streak freeze |
+| Token            | Hex                   | Use                                                                                                             |
+| ---------------- | --------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `--violet`       | `#6A57F5`             | Primary actions (Submit), logo tile, focus brand                                                                |
+| `--violet-hover` | `#6250F2`             | Primary hover. The canvas used `#7A68FF`, but white text on it is only 4.0:1, so hover darkens slightly instead |
+| `--violet-light` | `#A79BFF`             | Links, focus ring (2px, offset 2px)                                                                             |
+| `--violet-tint`  | `#2B2550` / `#1A1733` | Avatar fill, selected chips                                                                                     |
+| `--gold`         | `#FFC94A`             | XP, gold, level, crown, "you earned something"                                                                  |
+| `--gold-ink`     | `#1A1406`             | Text on gold buttons                                                                                            |
+| `--gold-deep`    | `#B9811F`             | Coin engraving                                                                                                  |
+| `--gold-flash`   | `#FFF1C2`             | XP gain segment flash, 30+ flame core                                                                           |
+| `--flame`        | `#FF9F43`             | Streak flame, "today" ring                                                                                      |
+| `--frost`        | `#7DD3FC`             | Streak freeze                                                                                                   |
 
 ### Difficulty (identical everywhere: list, workspace, profile, recap)
 
-| Level | Foreground | Chip background |
-|---|---|---|
-| Easy | `#2DD4A7` | `rgba(45,212,167,0.14)` |
-| Medium | `#F5B544` | `rgba(245,181,68,0.14)` |
-| Hard | `#FF6B81` | `rgba(255,107,129,0.14)` |
+| Level  | Foreground | Chip background          |
+| ------ | ---------- | ------------------------ |
+| Easy   | `#2DD4A7`  | `rgba(45,212,167,0.14)`  |
+| Medium | `#F5B544`  | `rgba(245,181,68,0.14)`  |
+| Hard   | `#FF6B81`  | `rgba(255,107,129,0.14)` |
 
 The three sit at different lightness, so they still read in grayscale.
 
 ### Verdicts
 
-| Verdict | Color | Tone |
-|---|---|---|
-| Accepted | `#2DD4A7` | Celebrate |
-| Wrong Answer | `#FF8A9C` | Show the diff, offer a hint |
-| Time Limit Exceeded | `#F5B544` | Point at complexity |
-| Memory Limit Exceeded | `#F5B544` | Point at data structures |
-| Runtime Error | `#FF8A9C` | Show the trace line |
-| Compile Error | `#A3AABD` | Jump to the line |
+| Verdict               | Color     | Tone                        |
+| --------------------- | --------- | --------------------------- |
+| Accepted              | `#2DD4A7` | Celebrate                   |
+| Wrong Answer          | `#FF8A9C` | Show the diff, offer a hint |
+| Time Limit Exceeded   | `#F5B544` | Point at complexity         |
+| Memory Limit Exceeded | `#F5B544` | Point at data structures    |
+| Runtime Error         | `#FF8A9C` | Show the trace line         |
+| Compile Error         | `#A3AABD` | Jump to the line            |
 
 ### Store rarity (kept off the difficulty hues)
 
@@ -80,12 +80,12 @@ Up `#2DD4A7` ▲ · Down `#FF8A9C` ▼ · No change `#A3AABD` —. Every arrow c
 
 ## Color tokens — light
 
-The canvas is dark only. Phase 1 derives a light theme with these rules, then checks every pair with a contrast script in CI (WCAG AA: 4.5:1 text, 3:1 large text and UI):
+The canvas is dark only. The derived light theme lives in `packages/ui/src/tokens.ts`; every text pair is checked by `pnpm tokens:check` in CI (WCAG AA: 4.5:1 text, 3:1 large text and UI):
 
 - Ground `#F7F7FB`, surface `#FFFFFF`, raised `#F0F0F6`, border `#E2E3EC`, text `#14151C`, muted `#565C70`.
 - Brand violet darkens to `#5442E0` (already on the canvas's light logo tile) for AA on white.
-- Gold as *text* on light becomes `#8A5A00`; gold fills stay `#FFC94A` with `--gold-ink` text.
-- Difficulty foregrounds darken (Easy `#087A5E`, Medium `#9A6200`, Hard `#C8314C`) at the same chip-tint alpha.
+- Gold as _text_ on light becomes `#8A5A00`; gold fills stay `#FFC94A` with `--gold-ink` text.
+- Difficulty foregrounds darken (Easy `#066F55`, Medium `#8A5800`, Hard `#B32843`) so they pass AA on their own 14% chip tint.
 
 ## Shape & spacing
 

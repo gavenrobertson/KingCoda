@@ -1,0 +1,9 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+onlyBuiltDependencies:
+  - esbuild
+  - workerd
+  - sharp
+  - better-sqlite3
+  - '@ast-grep/napi'
