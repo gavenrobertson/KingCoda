@@ -3,9 +3,11 @@
 #
 # Optional build-time extras for networks that re-terminate TLS (never needed on Cloudflare):
 #   --secret id=ca,src=/path/to/ca.crt --build-arg HTTPS_PROXY=...
+# Where Docker Hub rate-limits, point the bases at a mirror:
+#   --build-arg DEBIAN=mirror.gcr.io/library/debian:trixie-slim --build-arg GOLANG=mirror.gcr.io/library/golang:1.25-trixie
 
-ARG DEBIAN=mirror.gcr.io/library/debian:trixie-slim
-ARG GOLANG=mirror.gcr.io/library/golang:1.25-trixie
+ARG DEBIAN=debian:trixie-slim
+ARG GOLANG=golang:1.25-trixie
 
 FROM ${GOLANG} AS build
 WORKDIR /src
