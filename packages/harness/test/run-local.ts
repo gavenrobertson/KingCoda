@@ -1,5 +1,5 @@
 // Runs a harness Program with local toolchains, mirroring the judge box's commands (no sandbox:
-// test code only). The judge box itself is exercised by judge-spike/probes.
+// test code only). The judge box itself is exercised by judge/probes.
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';

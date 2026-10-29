@@ -20,7 +20,7 @@ jobs:
       CI: '1'
     defaults:
       run:
-        working-directory: judge-spike/worker
+        working-directory: judge/spike-worker
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -87,8 +87,8 @@ jobs:
         with:
           name: judge-spike-report
           path: |
-            judge-spike/worker/introspect.json
-            judge-spike/worker/probe.json
+            judge/spike-worker/introspect.json
+            judge/spike-worker/probe.json
 
       - name: Delete everything this run deployed
         if: always()

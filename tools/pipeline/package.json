@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@kingcoda/harness": "workspace:*",
+    "@kingcoda/judge-core": "workspace:*",
     "@kingcoda/problem-schema": "workspace:*",
     "yaml": "^2.9.1"
   },

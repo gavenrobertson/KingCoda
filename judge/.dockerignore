@@ -1,4 +1,4 @@
 **/node_modules
-worker/
+spike-worker/
 probes/
 *.md

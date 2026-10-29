@@ -8,13 +8,18 @@ A competitive programming practice platform where solving a problem feels like w
 
 ## Layout
 
-| Path            | What                                                                       |
-| --------------- | -------------------------------------------------------------------------- |
-| `apps/web`      | Next.js App Router on Cloudflare Workers (OpenNext), Better Auth           |
-| `packages/ui`   | Design tokens (single source in `src/tokens.ts`), theme CSS, UI components |
-| `packages/db`   | Drizzle schema for D1 and its SQL migrations                               |
-| `packages/game` | Pure reward-loop rules (levels so far; XP, streaks and badges in Phase 4)  |
-| `judge-spike`   | Phase 1 judge sandbox prototype (`kc-run`) and its hostile-code test suite |
+| Path                      | What                                                                                     |
+| ------------------------- | ---------------------------------------------------------------------------------------- |
+| `apps/web`                | Next.js App Router on Cloudflare Workers (OpenNext), Better Auth                         |
+| `packages/ui`             | Design tokens (single source in `src/tokens.ts`), theme CSS, UI components               |
+| `packages/db`             | Drizzle schema for D1 and its SQL migrations                                             |
+| `packages/game`           | Pure reward-loop rules (levels so far; XP, streaks and badges in Phase 4)                |
+| `packages/problem-schema` | The problem package format, value types and output checkers                              |
+| `packages/harness`        | Starter code and per-language drivers that call the user's function on JSON test cases   |
+| `packages/judge-core`     | Builds a judge job from a submission and turns the box's output into a verdict           |
+| `judge`                   | The judge box: `kc-run` supervisor, `kc-exec` sandbox, image and hostile-code probes     |
+| `tools/pipeline`          | Validates and builds problem packages (reference vs. brute force, generated test suites) |
+| `content/problems`        | The problem bank, one package per problem                                                |
 
 ## Local development
 

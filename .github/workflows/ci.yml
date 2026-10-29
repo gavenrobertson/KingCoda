@@ -67,7 +67,7 @@ jobs:
           path: apps/web/playwright-report
           retention-days: 7
 
-  judge-spike:
+  judge:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -75,26 +75,31 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.25'
-          cache-dependency-path: judge-spike/kc-run/go.mod
+          cache-dependency-path: judge/kc-run/go.mod
       - name: kc-run vet + unit tests
-        working-directory: judge-spike/kc-run
+        working-directory: judge/kc-run
         run: |
           test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
           go vet ./...
           go test ./...
       - name: Build judge image
-        run: docker build -t kingcoda-judge-spike judge-spike
+        run: docker build -t kingcoda-judge judge
       - name: Start judge box
         run: |
-          docker run -d --name kcjudge --privileged --cgroupns private -p 18080:8080 --memory 3g --cpus 1 kingcoda-judge-spike
+          docker run -d --name kcjudge --privileged --cgroupns private -p 18080:8080 --memory 3g --cpus 1 kingcoda-judge
           for i in $(seq 1 30); do curl -fs localhost:18080/healthz && break; sleep 1; done
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - name: Hostile-code probe suite
         run: |
           curl -fsS localhost:18080/introspect | jq '{cgroupsEnabled, sandboxedProcess}'
-          node judge-spike/probes/run.ts http://localhost:18080
+          node judge/probes/run.ts http://localhost:18080
+      - name: Verdicts through the box
+        run: node judge/probes/verdicts.ts http://localhost:18080
       - name: Box logs
         if: failure()
         run: docker logs kcjudge

@@ -5,6 +5,6 @@ pnpm-lock.yaml
 dist/
 coverage/
 packages/db/migrations/
-judge-spike/kc-run/go.sum
+judge/kc-run/go.sum
 **/cloudflare-env.d.ts
 packages/ui/styles/theme.css

@@ -112,7 +112,7 @@ importers:
         specifier: ^4.155.0
         version: 4.155.0(@cloudflare/workers-types@5.20261029.1)(@types/node@22.20.5)
 
-  judge-spike/worker:
+  judge/spike-worker:
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^5.20261029.1
@@ -177,6 +177,25 @@ importers:
         specifier: ^5.0.5
         version: 5.0.5(@types/node@22.20.5)(vite@8.3.5(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.36.0)(tsx@4.23.15)(yaml@2.9.1))
 
+  packages/judge-core:
+    dependencies:
+      '@kingcoda/harness':
+        specifier: workspace:*
+        version: link:../harness
+      '@kingcoda/problem-schema':
+        specifier: workspace:*
+        version: link:../problem-schema
+    devDependencies:
+      '@types/node':
+        specifier: ^22.20.5
+        version: 22.20.5
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^5.0.5
+        version: 5.0.5(@types/node@22.20.5)(vite@8.3.5(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.36.0)(tsx@4.23.15)(yaml@2.9.1))
+
   packages/problem-schema:
     dependencies:
       zod:
@@ -213,6 +232,9 @@ importers:
       '@kingcoda/harness':
         specifier: workspace:*
         version: link:../../packages/harness
+      '@kingcoda/judge-core':
+        specifier: workspace:*
+        version: link:../../packages/judge-core
       '@kingcoda/problem-schema':
         specifier: workspace:*
         version: link:../../packages/problem-schema

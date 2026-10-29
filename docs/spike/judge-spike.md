@@ -1,6 +1,6 @@
 # Judge spike report
 
-Status: **Passed on Cloudflare (2026-10-29)** · Code: [`judge-spike/`](../../judge-spike/) · Workflow: _Judge spike on Cloudflare_ (manual)
+Status: **Passed on Cloudflare (2026-10-29)** · Code: [`judge/`](../../judge/) · Workflow: _Judge spike on Cloudflare_ (manual)
 
 This spike tested whether the judge design in [ARCHITECTURE §5](../ARCHITECTURE.md#5-the-judge) is safe and fast enough before Phase 2 builds on it.
 

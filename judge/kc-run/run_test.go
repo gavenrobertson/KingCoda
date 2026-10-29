@@ -41,12 +41,12 @@ func TestJobValidate(t *testing.T) {
 		"path traversal id": func(j *Job) { j.ID = "../etc" },
 		"unknown language":  func(j *Job) { j.Lang = "brainfuck" },
 		"empty source":      func(j *Job) { j.Source = "" },
-		"huge source":       func(j *Job) { j.Source = strings.Repeat("x", 65<<10) },
+		"huge source":       func(j *Job) { j.Source = strings.Repeat("x", 513<<10) },
 		"no inputs":         func(j *Job) { j.Inputs = nil },
 		"time too low":      func(j *Job) { j.TimeMs = 10 },
 		"time too high":     func(j *Job) { j.TimeMs = 60000 },
 		"memory too high":   func(j *Job) { j.MemoryMb = 8192 },
-		"output too big":    func(j *Job) { j.OutputLimit = 2 << 20 },
+		"output too big":    func(j *Job) { j.OutputLimit = 17 << 20 },
 	}
 	for name, mutate := range cases {
 		j := ok

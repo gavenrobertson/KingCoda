@@ -17,6 +17,12 @@ var languages = map[string]language{
 		run:   func(int) []string { return []string{"/usr/bin/python3", "-S", "-B", "main.py"} },
 		nproc: 16,
 	},
+	// The harness's Python program: driver.py imports the user's solution.py.
+	"python-harness": {
+		file:  "driver.py",
+		run:   func(int) []string { return []string{"/usr/bin/python3", "-S", "-B", "driver.py"} },
+		nproc: 16,
+	},
 	"javascript": {
 		file: "main.js",
 		run: func(mb int) []string {
@@ -27,7 +33,8 @@ var languages = map[string]language{
 	"cpp": {
 		file: "main.cpp",
 		compile: func(int) []string {
-			return []string{"/usr/bin/g++", "-O2", "-std=c++20", "-pipe", "-o", "main", "main.cpp"}
+			// kc_prelude.hpp (and its precompiled .gch) live in the image, matching these exact flags.
+			return []string{"/usr/bin/g++", "-O2", "-std=c++20", "-pipe", "-I/usr/local/include/kingcoda", "-o", "main", "main.cpp"}
 		},
 		run:           func(int) []string { return []string{"./main"} },
 		nproc:         16,

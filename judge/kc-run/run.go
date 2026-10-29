@@ -44,12 +44,18 @@ func (r *runner) run(job *Job) (*Result, error) {
 	if err := os.Chown(dir, r.cfg.UID, r.cfg.GID); err != nil {
 		return nil, fmt.Errorf("chown workdir: %w", err)
 	}
-	src := filepath.Join(dir, lang.file)
-	if err := os.WriteFile(src, []byte(job.Source), 0o600); err != nil {
-		return nil, fmt.Errorf("write source: %w", err)
+	files := job.Files
+	if len(files) == 0 {
+		files = map[string]string{lang.file: job.Source}
 	}
-	if err := os.Chown(src, r.cfg.UID, r.cfg.GID); err != nil {
-		return nil, fmt.Errorf("chown source: %w", err)
+	for name, content := range files {
+		path := filepath.Join(dir, name)
+		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+			return nil, fmt.Errorf("write %s: %w", name, err)
+		}
+		if err := os.Chown(path, r.cfg.UID, r.cfg.GID); err != nil {
+			return nil, fmt.Errorf("chown %s: %w", name, err)
+		}
 	}
 
 	if lang.compile != nil {

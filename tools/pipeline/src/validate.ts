@@ -1,3 +1,4 @@
+import { groupCases, LARGEST_CATEGORY } from '@kingcoda/judge-core';
 import { conforms, outputsMatch, type Problem, type TestCase } from '@kingcoda/problem-schema';
 import { CompiledCpp } from './cpp.ts';
 import { loadPackage, type Package } from './load.ts';
@@ -138,9 +139,16 @@ export function validatePackage(dir: string): { checks: Check[]; built?: BuiltPr
     const hiddenArgs: Array<{ args: unknown[]; category?: string }> = [
       ...edges.map((e) => ({ args: positional(meta, e.args), category: e.category })),
       ...medium.map((a) => ({ args: positional(meta, a), category: 'random' })),
-      ...max.map((a) => ({ args: positional(meta, a), category: 'largest inputs' })),
+      ...max.map((a) => ({ args: positional(meta, a), category: LARGEST_CATEGORY })),
     ];
-    const { outputs, ms } = ref.run(hiddenArgs);
+    // Run the suite in the judge's process groups: each group gets the full time limit there.
+    const outputs: unknown[] = [];
+    let ms = 0;
+    for (const g of groupCases(hiddenArgs)) {
+      const run = ref.run(hiddenArgs.slice(g.start, g.start + g.count));
+      outputs.push(...run.outputs);
+      ms = Math.max(ms, run.ms);
+    }
     for (const [i, out] of outputs.entries()) {
       if (!conforms(out, meta.signature.returns))
         return fail('reference output is well-typed', `case ${i}: ${short(out)}`);
@@ -149,10 +157,13 @@ export function validatePackage(dir: string): { checks: Check[]; built?: BuiltPr
     if (ms > meta.limits.timeMs / 2) {
       return fail(
         'reference fits the time limit',
-        `${ms.toFixed(0)} ms for the suite, limit ${meta.limits.timeMs} ms needs 2x headroom`,
+        `${ms.toFixed(0)} ms for the slowest test process, limit ${meta.limits.timeMs} ms needs 2x headroom`,
       );
     }
-    pass('reference fits the time limit', `${ms.toFixed(0)} ms of ${meta.limits.timeMs} ms`);
+    pass(
+      'reference fits the time limit',
+      `slowest test process ${ms.toFixed(0)} ms of ${meta.limits.timeMs} ms`,
+    );
 
     const hidden = hiddenArgs.map((c, i) => ({ ...c, expected: outputs[i] }));
     return { checks, built: { pkg, samples, hidden, referenceMs: ms } };

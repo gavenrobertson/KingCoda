@@ -17,7 +17,7 @@ import (
 
 const (
 	listenAddr = ":8080"
-	maxBody    = 2 << 20 // source + test inputs per request
+	maxBody    = 32 << 20 // source + test inputs per request (JSON-escaped)
 )
 
 func main() {
